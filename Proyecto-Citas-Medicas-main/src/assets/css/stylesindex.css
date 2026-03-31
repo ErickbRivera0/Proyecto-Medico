@@ -1,0 +1,65 @@
+.hero {
+    background: linear-gradient(
+        rgba(0,0,0,0.5),
+        rgba(0,0,0,0.5)
+    ),
+    url("../img/hero-medico.jpg") center/cover no-repeat;
+    padding: 120px 0;
+}
+
+.card img {
+    height: 220px;
+    object-fit: cover;
+}
+
+.footer-link {
+    color: #ccc;
+    text-decoration: none;
+}
+
+.footer-link:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* NAVBAR ESTILO VIDRIO */
+.navbar {
+    background: rgba(69, 68, 68, 0.148) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(54, 51, 51, 0.179);
+}
+
+/* Logo */
+.logo-navbar {
+    height: 65px;
+}
+
+/* Links del menú */
+.navbar .nav-link {
+    color: #000 !important;
+    font-weight: 700;
+    position: relative;
+    transition: color 0.3s;
+}
+
+/* Efecto dorado al pasar el mouse */
+.navbar .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #d4af37, #f5d76e);
+    transition: width 0.3s;
+}
+
+.navbar .nav-link:hover {
+    color: #d4af37 !important;
+}
+
+.navbar .nav-link:hover::after {
+    width: 100%;
+}
+
