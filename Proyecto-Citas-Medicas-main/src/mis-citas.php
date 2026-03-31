@@ -1,104 +1,106 @@
 <?php
+session_start();
 require_once 'config.php';
 
-$mensaje = isset($_GET['mensaje']) ? $_GET['mensaje'] : '';
+// Verificar autenticación
+if (!isset($_SESSION['usuario'])) {
+    header("Location: login.php");
+    exit();
+}
 
-// Obtener todas las citas
-$sql = "SELECT c.*, m.nombre as medico_nombre, m.especialidad 
-        FROM citas c 
-        LEFT JOIN medicos m ON c.medico_id = m.id 
-        ORDER BY c.fecha DESC, c.hora DESC";
-$resultado = $conn->query($sql);
+$user_email = $_SESSION['email'];
+
+// Obtener citas del usuario
+$stmt = $conn->prepare("SELECT c.*, m.nombre as medico_nombre, m.especialidad 
+                        FROM citas c 
+                        JOIN medicos m ON c.medico_id = m.id 
+                        WHERE c.paciente_email = ? 
+                        ORDER BY c.fecha DESC, c.hora DESC");
+$stmt->bind_param("s", $user_email);
+$stmt->execute();
+$citas = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Citas - Citas Médicas</title>
-     <link rel="stylesheet" href="assets/css/global.css">
+    <title>Mis Citas - Sistema de Citas Médicas</title>
+    <link rel="stylesheet" href="assets/css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-
 <body>
     <div class="container">
-        <header>
-            <nav class="navbar">
-                <div class="logo">
-                    <h1>🏥 Citas Médicas</h1>
-                </div>
-                <ul class="nav-menu">
-                    <li><a href="index.php">Inicio</a></li>
-                    <li><a href="agendar-cita.php">Agendar Cita</a></li>
-                    <li><a href="mis-citas.php" class="active">Mis Citas</a></li>
-                    <li><a href="medicos.php">Médicos</a></li>
-                </ul>
-            </nav>
-        </header>
+        <nav class="navbar">
+            <div class="logo">
+                <h1><i class="fas fa-calendar-check"></i> Citas Médicas</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.php"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="agendar-cita.php"><i class="fas fa-calendar-plus"></i> Agendar Cita</a></li>
+                <li><a href="mis-citas.php" class="active"><i class="fas fa-calendar-check"></i> Mis Citas</a></li>
+                <li><a href="medicos.php"><i class="fas fa-user-md"></i> Médicos</a></li>
+            </ul>
+        </nav>
 
         <main>
-            <section class="citas-section">
-                <h2>Mis Citas</h2>
-                <?php if (!empty($mensaje)) : ?>
-                    <div class="alert alert-success">
-                        <?php echo htmlspecialchars($mensaje); ?>
+            <section class="citas-tabla">
+                <h2><i class="fas fa-calendar-alt"></i> Mis Citas Médicas</h2>
+                
+                <?php if ($citas->num_rows == 0): ?>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No tienes citas registradas. 
+                        <a href="agendar-cita.php">Agenda tu primera cita aquí</a>
                     </div>
-
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Médico</th>
+                                    <th>Especialidad</th>
+                                    <th>Motivo</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while($cita = $citas->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo date('d/m/Y', strtotime($cita['fecha'])); ?></td>
+                                    <td><?php echo $cita['hora']; ?></td>
+                                    <td><?php echo htmlspecialchars($cita['medico_nombre']); ?></td>
+                                    <td><?php echo htmlspecialchars($cita['especialidad']); ?></td>
+                                    <td><?php echo htmlspecialchars($cita['motivo']); ?></td>
+                                    <td>
+                                        <span class="estado <?php echo strtolower($cita['estado']); ?>">
+                                            <?php echo ucfirst($cita['estado']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php if($cita['estado'] == 'pendiente' && strtotime($cita['fecha']) >= strtotime(date('Y-m-d'))): ?>
+                                            <a href="cancelar-cita.php?id=<?php echo $cita['id']; ?>" 
+                                               class="btn btn-danger btn-small" 
+                                               onclick="return confirm('¿Estás seguro de cancelar esta cita?')">
+                                                <i class="fas fa-times"></i> Cancelar
+                                            </a>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
-                <?php if (!empty($mensaje)) : ?>
-                    <div class="alert alert-success"><?php echo htmlspecialchars($mensaje); ?></div>
-                <?php endif; ?>
-
-                <div class="citas-tabla">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Paciente</th>
-                                <th>Médico</th>
-                                <th>Especialidad</th>
-                                <th>Fecha</th>
-                                <th>Hora</th>
-                                <th>Motivo</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            if ($resultado->num_rows > 0) {
-                                while ($cita = $resultado->fetch_assoc()) {
-                                    $estado_class = strtolower($cita['estado']);
-                                    echo "
-                                    <tr>
-                                        <td>" . htmlspecialchars($cita['paciente_nombre']) . "</td>
-                                        <td>" . htmlspecialchars($cita['medico_nombre'] ?? 'No asignado') . "</td>
-                                        <td>" . htmlspecialchars($cita['especialidad'] ?? '-') . "</td>
-                                        <td>" . htmlspecialchars($cita['fecha']) . "</td>
-                                        <td>" . htmlspecialchars($cita['hora']) . "</td>
-                                        <td>" . htmlspecialchars(substr($cita['motivo'], 0, 30) . '...') . "</td>
-                                        <td><span class='estado $estado_class'>" . htmlspecialchars($cita['estado']) . "</span></td>
-                                        <td>
-                                            <a href='editar-cita.php?id=" . $cita['id'] . "' class='btn-small'>Editar</a>
-                                            <a href='eliminar-cita.php?id=" . $cita['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"¿Estás seguro?\")'>Eliminar</a>
-                                        </td>
-                                    </tr>
-                                    ";
-                                }
-                            } else {
-                                echo "<tr><td colspan='8' style='text-align: center; padding: 20px;'>No hay citas registradas</td></tr>";
-                            }
-                            ?>
-                        </tbody>
-                    </table>
-                </div>
             </section>
         </main>
 
         <footer>
-            <p>&copy; 2026 Sistema de Citas Médicas. Todos los derechos reservados.</p>
+            <p>&copy; <?php echo date('Y'); ?> Sistema de Citas Médicas. Todos los derechos reservados.</p>
         </footer>
     </div>
 </body>
-
 </html>

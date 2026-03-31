@@ -1,8 +1,6 @@
 <?php
 session_start();
 
-
-
 // Verificar autenticación
 if (!isset($_SESSION['usuario'])) {
     header("Location: login.php");
@@ -18,31 +16,36 @@ if (isset($_SESSION['login_time']) && (time() - $_SESSION['login_time'] > 28800)
 
 // Obtener estadísticas del usuario desde la base de datos
 require_once 'config.php';
-$user_id = $_SESSION['id'];
+$user_email = $_SESSION['email'];
+$user_nombre = $_SESSION['usuario'];
 
 // Contar citas activas del usuario
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM citas WHERE usuario_id = ? AND fecha >= CURDATE() AND estado != 'cancelada'");
-$stmt->bind_param("i", $user_id);
+$stmt = $conn->prepare("SELECT COUNT(*) as total FROM citas WHERE paciente_email = ? AND fecha >= CURDATE() AND estado != 'cancelada'");
+$stmt->bind_param("s", $user_email);
 $stmt->execute();
 $result = $stmt->get_result();
 $citas_activas = $result->fetch_assoc()['total'];
 
 // Contar total de citas
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM citas WHERE usuario_id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt = $conn->prepare("SELECT COUNT(*) as total FROM citas WHERE paciente_email = ?");
+$stmt->bind_param("s", $user_email);
 $stmt->execute();
 $result = $stmt->get_result();
 $total_citas = $result->fetch_assoc()['total'];
 
 // Obtener próxima cita
-$stmt = $conn->prepare("SELECT c.fecha, c.hora, m.nombre as medico_nombre, m.especialidad 
+$stmt = $conn->prepare("SELECT c.fecha, c.hora, c.motivo, m.nombre as medico_nombre, m.especialidad 
                         FROM citas c 
                         JOIN medicos m ON c.medico_id = m.id 
-                        WHERE c.usuario_id = ? AND c.fecha >= CURDATE() AND c.estado != 'cancelada' 
+                        WHERE c.paciente_email = ? AND c.fecha >= CURDATE() AND c.estado != 'cancelada' 
                         ORDER BY c.fecha ASC, c.hora ASC LIMIT 1");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("s", $user_email);
 $stmt->execute();
 $proxima_cita = $stmt->get_result()->fetch_assoc();
+
+// Contar médicos activos
+$result = $conn->query("SELECT COUNT(*) as total FROM medicos");
+$total_medicos = $result->fetch_assoc()['total'];
 ?>
 
 <!DOCTYPE html>
@@ -52,15 +55,32 @@ $proxima_cita = $stmt->get_result()->fetch_assoc();
     <title>Sistema de Citas Médicas - Bienvenido <?php echo htmlspecialchars($_SESSION['usuario']); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Hero con imagen de fondo */
         .hero {
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('assets/img/hero-bg.jpg');
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://www.shutterstock.com/image-vector/diverse-group-medical-professionals-including-260nw-2740671255.jpg');
             background-size: cover;
             background-position: center;
-            padding: 100px 0;
+            background-attachment: fixed;
+            padding: 120px 0;
             margin-bottom: 50px;
+            position: relative;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+        }
+        
+        .hero .container {
+            position: relative;
+            z-index: 2;
         }
         
         .stat-card {
@@ -102,6 +122,8 @@ $proxima_cita = $stmt->get_result()->fetch_assoc();
         .next-appointment-card {
             border-left: 4px solid #0d6efd;
             transition: all 0.3s;
+            background: white;
+            border-radius: 10px;
         }
         
         .next-appointment-card:hover {
@@ -125,13 +147,49 @@ $proxima_cita = $stmt->get_result()->fetch_assoc();
             border-radius: 50%;
         }
         
+        .specialty-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .specialty-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        
+        .specialty-card img {
+            transition: transform 0.3s;
+        }
+        
+        .specialty-card:hover img {
+            transform: scale(1.05);
+        }
+        
         @media (max-width: 768px) {
             .hero {
                 padding: 60px 0;
+                background-attachment: scroll;
             }
             .stat-number {
                 font-size: 32px;
             }
+        }
+        
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
         }
     </style>
 </head>
@@ -183,11 +241,12 @@ $proxima_cita = $stmt->get_result()->fetch_assoc();
         </div>
     </nav>
 
+    <!-- Hero Section con imagen mejorada -->
     <div class="hero text-white text-center">
         <div class="container">
-            <h1 class="display-4 fw-bold">Bienvenido, <?php echo htmlspecialchars($_SESSION['usuario']); ?>!</h1>
-            <p class="lead">Tu salud es nuestra prioridad. Agenda tu cita médica de forma rápida y segura.</p>
-            <a href="agendar-cita.php" class="btn btn-light btn-lg mt-3">
+            <h1 class="display-4 fw-bold fade-in-up">¡Bienvenido, <?php echo htmlspecialchars($_SESSION['usuario']); ?>!</h1>
+            <p class="lead mt-3 fade-in-up" style="animation-delay: 0.2s;">Tu salud es nuestra prioridad. Agenda tu cita médica de forma rápida y segura.</p>
+            <a href="agendar-cita.php" class="btn btn-light btn-lg mt-4 fade-in-up" style="animation-delay: 0.4s;">
                 <i class="fas fa-calendar-plus"></i> Agendar Cita Ahora
             </a>
         </div>
@@ -239,13 +298,7 @@ $proxima_cita = $stmt->get_result()->fetch_assoc();
                         <i class="fas fa-user-md"></i>
                     </div>
                     <h5>Médicos Disponibles</h5>
-                    <div class="stat-number">
-                        <?php
-                        $result = $conn->query("SELECT COUNT(*) as total FROM medicos WHERE activo = 1");
-                        $total_medicos = $result->fetch_assoc()['total'];
-                        echo $total_medicos;
-                        ?>
-                    </div>
+                    <div class="stat-number"><?php echo $total_medicos; ?></div>
                     <p class="text-muted mb-0">Profesionales listos para atenderte</p>
                 </div>
             </div>
@@ -254,7 +307,7 @@ $proxima_cita = $stmt->get_result()->fetch_assoc();
         <?php if ($proxima_cita): ?>
         <div class="row mb-5">
             <div class="col-12">
-                <div class="card next-appointment-card">
+                <div class="card next-appointment-card shadow">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
                             <div>
@@ -265,6 +318,10 @@ $proxima_cita = $stmt->get_result()->fetch_assoc();
                                 <p class="mb-1">
                                     <i class="fas fa-stethoscope"></i> 
                                     Especialidad: <?php echo htmlspecialchars($proxima_cita['especialidad']); ?>
+                                </p>
+                                <p class="mb-1">
+                                    <i class="fas fa-notes-medical"></i> 
+                                    Motivo: <?php echo htmlspecialchars($proxima_cita['motivo']); ?>
                                 </p>
                                 <p class="mb-0">
                                     <i class="fas fa-calendar-day"></i> 
@@ -282,50 +339,72 @@ $proxima_cita = $stmt->get_result()->fetch_assoc();
                 </div>
             </div>
         </div>
+        <?php else: ?>
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No tienes citas programadas. 
+                    <a href="agendar-cita.php" class="alert-link">Agenda tu primera cita aquí</a>
+                </div>
+            </div>
+        </div>
         <?php endif; ?>
     </div>
 
+    <!-- Especialidades Médicas con imágenes locales -->
     <section class="container my-5">
         <h2 class="text-center mb-4">
             <i class="fas fa-stethoscope"></i> Especialidades Médicas
         </h2>
         <div class="row g-4">
             <div class="col-md-3 col-sm-6">
-                <div class="card text-center h-100 shadow-sm">
+                <div class="card specialty-card text-center h-100 shadow-sm">
                     <img src="assets/img/cardiologia.jpg" class="card-img-top" alt="Cardiología" style="height: 200px; object-fit: cover;">
                     <div class="card-body">
                         <h5 class="card-title">Cardiología</h5>
                         <p class="card-text">Cuidado integral del corazón y sistema circulatorio.</p>
+                        <a href="agendar-cita.php?especialidad=Cardiología" class="btn btn-outline-primary btn-sm">
+                            Agendar Cita <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-3 col-sm-6">
-                <div class="card text-center h-100 shadow-sm">
+                <div class="card specialty-card text-center h-100 shadow-sm">
                     <img src="assets/img/pediatria.jpg" class="card-img-top" alt="Pediatría" style="height: 200px; object-fit: cover;">
                     <div class="card-body">
                         <h5 class="card-title">Pediatría</h5>
                         <p class="card-text">Atención médica especializada para niños y adolescentes.</p>
+                        <a href="agendar-cita.php?especialidad=Pediatría" class="btn btn-outline-primary btn-sm">
+                            Agendar Cita <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-3 col-sm-6">
-                <div class="card text-center h-100 shadow-sm">
+                <div class="card specialty-card text-center h-100 shadow-sm">
                     <img src="assets/img/ginecologia.jpg" class="card-img-top" alt="Ginecología" style="height: 200px; object-fit: cover;">
                     <div class="card-body">
                         <h5 class="card-title">Ginecología</h5>
                         <p class="card-text">Salud integral de la mujer en todas las etapas.</p>
+                        <a href="agendar-cita.php?especialidad=Ginecología" class="btn btn-outline-primary btn-sm">
+                            Agendar Cita <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-3 col-sm-6">
-                <div class="card text-center h-100 shadow-sm">
+                <div class="card specialty-card text-center h-100 shadow-sm">
                     <img src="assets/img/medicina-general.jpg" class="card-img-top" alt="Medicina General" style="height: 200px; object-fit: cover;">
                     <div class="card-body">
                         <h5 class="card-title">Medicina General</h5>
                         <p class="card-text">Consulta médica primaria y atención preventiva.</p>
+                        <a href="agendar-cita.php?especialidad=Medicina General" class="btn btn-outline-primary btn-sm">
+                            Agendar Cita <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
             </div>

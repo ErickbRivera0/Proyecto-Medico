@@ -1,9 +1,15 @@
 <?php
+session_start();
 require_once 'config.php';
 
-// Obtener todos los médicos
-$sql = "SELECT id, nombre, especialidad, telefono, email FROM medicos ORDER BY nombre ASC";
-$resultado = $conn->query($sql);
+// Verificar autenticación
+if (!isset($_SESSION['usuario'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Obtener médicos
+$medicos = $conn->query("SELECT * FROM medicos ORDER BY nombre ASC");
 ?>
 
 <!DOCTYPE html>
@@ -11,56 +17,51 @@ $resultado = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Médicos - Citas Médicas</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <title>Médicos - Sistema de Citas Médicas</title>
+    <link rel="stylesheet" href="assets/css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <nav class="navbar">
-                <div class="logo">
-                    <h1>🏥 Citas Médicas</h1>
-                </div>
-                <ul class="nav-menu">
-                    <li><a href="index.php">Inicio</a></li>
-                    <li><a href="agendar-cita.php">Agendar Cita</a></li>
-                    <li><a href="mis-citas.php">Mis Citas</a></li>
-                    <li><a href="medicos.php" class="active">Médicos</a></li>
-                </ul>
-            </nav>
-        </header>
+        <nav class="navbar">
+            <div class="logo">
+                <h1><i class="fas fa-calendar-check"></i> Citas Médicas</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.php"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="agendar-cita.php"><i class="fas fa-calendar-plus"></i> Agendar Cita</a></li>
+                <li><a href="mis-citas.php"><i class="fas fa-calendar-check"></i> Mis Citas</a></li>
+                <li><a href="medicos.php" class="active"><i class="fas fa-user-md"></i> Médicos</a></li>
+            </ul>
+        </nav>
 
         <main>
             <section class="medicos-section">
-                <h2>Nuestros Médicos</h2>
+                <h2><i class="fas fa-stethoscope"></i> Nuestros Médicos Especialistas</h2>
+                <p class="text-center mb-4">Contamos con profesionales altamente calificados para tu atención médica</p>
+                
                 <div class="medicos-grid">
-                    <?php
-                    if ($resultado->num_rows > 0) {
-                        while ($medico = $resultado->fetch_assoc()) {
-                            echo "
-                            <div class='medico-card'>
-                                <div class='medico-header'>
-                                    <h3>" . htmlspecialchars($medico['nombre']) . "</h3>
-                                    <p class='especialidad'>" . htmlspecialchars($medico['especialidad']) . "</p>
-                                </div>
-                                <div class='medico-info'>
-                                    <p><strong>Teléfono:</strong> " . htmlspecialchars($medico['telefono']) . "</p>
-                                    <p><strong>Email:</strong> " . htmlspecialchars($medico['email']) . "</p>
-                                </div>
-                                <a href='agendar-cita.php?medico_id=" . $medico['id'] . "' class='btn'>Agendar Cita</a>
-                            </div>
-                            ";
-                        }
-                    } else {
-                        echo "<p>No hay médicos registrados.</p>";
-                    }
-                    ?>
+                    <?php while($medico = $medicos->fetch_assoc()): ?>
+                    <div class="medico-card">
+                        <div class="medico-header">
+                            <h3><i class="fas fa-user-md"></i> <?php echo htmlspecialchars($medico['nombre']); ?></h3>
+                            <p class="especialidad"><i class="fas fa-stethoscope"></i> <?php echo htmlspecialchars($medico['especialidad']); ?></p>
+                        </div>
+                        <div class="medico-info">
+                            <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($medico['telefono']); ?></p>
+                            <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($medico['email']); ?></p>
+                        </div>
+                        <a href="agendar-cita.php?medico_id=<?php echo $medico['id']; ?>" class="btn btn-primary btn-small">
+                            <i class="fas fa-calendar-plus"></i> Agendar Cita
+                        </a>
+                    </div>
+                    <?php endwhile; ?>
                 </div>
             </section>
         </main>
 
         <footer>
-            <p>&copy; 2026 Sistema de Citas Médicas. Todos los derechos reservados.</p>
+            <p>&copy; <?php echo date('Y'); ?> Sistema de Citas Médicas. Todos los derechos reservados.</p>
         </footer>
     </div>
 </body>
