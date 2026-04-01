@@ -30,3 +30,16 @@ INSERT INTO medicos (nombre, especialidad, telefono, email) VALUES
 ('Dr. Juan Rodríguez', 'Ortopedia', '504-2234-5680', 'juan@clinica.com'),
 ('Dra. Ana Martínez', 'Neurología', '504-2234-5681', 'ana@clinica.com'),
 ('Dr. Pedro Sánchez', 'Oftalmología', '504-2234-5682', 'pedro@clinica.com');
+
+-- Crear tabla de usuarios
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(150) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    telefono VARCHAR(20),
+    password VARCHAR(255) NOT NULL,
+    rol VARCHAR(50) NOT NULL DEFAULT 'usuario',
+    estado VARCHAR(50) NOT NULL DEFAULT 'activo',
+    fecha_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

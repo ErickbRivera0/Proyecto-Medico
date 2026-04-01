@@ -5,6 +5,7 @@ define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASSWORD', getenv('DB_PASSWORD') ?: 'root123');
 define('DB_NAME', getenv('DB_NAME') ?: 'citas_medicas');
+//define('BASE_URL', 'http://localhost/Proyecto-Citas-Medicas-main/src');
 try {
 // Crear conexión
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
