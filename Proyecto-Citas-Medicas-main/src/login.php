@@ -1,8 +1,6 @@
 <?php
-
 session_start();
 require_once 'config.php';
-
 
 $error = "";
 $email = "";
@@ -31,9 +29,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 // Redirección según el rol
                 if ($user['rol'] === 'admin') {
-                    header("Location: gestionar.php");
+                    header("Location: admin/index.php");  // Redirige al panel admin
                 } else {
-                    header("Location: index.php");
+                    header("Location: index.php");        // Redirige al panel usuario
                 }
                 exit();
 
