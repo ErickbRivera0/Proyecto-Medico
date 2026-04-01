@@ -14,6 +14,9 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 
 $id = (int)$_GET['id'];
 
+// Asegurar que la columna para chequeos exista (migración ligera en runtime)
+$conn->query("ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS chequeos_seleccionados TEXT DEFAULT NULL");
+
 // Procesar actualización
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre = $_POST['nombre'] ?? '';
@@ -28,9 +31,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $altura = $_POST['altura'] ?? null;
     $notas = $_POST['notas'] ?? null;
 
-    $up = $conn->prepare('UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ? WHERE id = ?');
-    $up->bind_param('sssssssssssi', $nombre, $telefono, $fecha_nacimiento, $sexo, $direccion, $alergias, $antecedentes, $medicamentos, $peso, $altura, $notas, $id);
-    $up->execute();
+    // Procesar chequeos seleccionados (se recibe como array de checkboxes)
+    $chequeos_selected_arr = $_POST['chequeos_seleccionados'] ?? null;
+    $chequeos_selected_json = null;
+    if (!empty($chequeos_selected_arr) && is_array($chequeos_selected_arr)) {
+        $chequeos_selected_json = json_encode(array_values($chequeos_selected_arr), JSON_UNESCAPED_UNICODE);
+    }
+
+    $update_sql = 'UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ?, chequeos_seleccionados = ? WHERE id = ?';
+    $up = $conn->prepare($update_sql);
+    if ($up) {
+        $up->bind_param('ssssssssssssi', $nombre, $telefono, $fecha_nacimiento, $sexo, $direccion, $alergias, $antecedentes, $medicamentos, $peso, $altura, $notas, $chequeos_selected_json, $id);
+        $up->execute();
+    } else {
+        // Si no se pudo preparar (p. ej. columna ausente por alguna razón), intentar sin el campo de chequeos
+        $up2 = $conn->prepare('UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ? WHERE id = ?');
+        if ($up2) {
+            $up2->bind_param('sssssssssssi', $nombre, $telefono, $fecha_nacimiento, $sexo, $direccion, $alergias, $antecedentes, $medicamentos, $peso, $altura, $notas, $id);
+            $up2->execute();
+        } else {
+            error_log('No se pudo preparar la actualización del expediente.');
+        }
+    }
     header('Location: expedientes.php');
     exit();
 }
@@ -41,6 +63,45 @@ $q->bind_param('i', $id);
 $q->execute();
 $exp = $q->get_result()->fetch_assoc();
 if (!$exp) { header('Location: expedientes.php'); exit(); }
+
+// Preparar lista de chequeos y selecciones actuales (para pre-marcar checkboxes)
+$defaultChecks = [
+    'Chequeo general', 'Signos vitales', 'Examen de sangre', 'Electrocardiograma',
+    'Prueba de glucemia', 'Perfil lipídico', 'Radiografía', 'Ecografía',
+    'Vacunación', 'Historia clínica', 'Control de peso', 'Control de la tensión'
+];
+$checksList = $defaultChecks;
+// Si la fila contiene una lista personalizada (campo `chequeos_lista`), usarla
+if (!empty($exp['chequeos_lista']) || !empty($exp['checks_list']) || !empty($exp['chequeos_items'])) {
+    $raw = $exp['chequeos_lista'] ?? $exp['checks_list'] ?? $exp['chequeos_items'];
+    if (is_array($raw)) {
+        $checksList = $raw;
+    } elseif (is_string($raw)) {
+        $tmp = json_decode($raw, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($tmp)) {
+            $checksList = $tmp;
+        } else {
+            $checksList = array_filter(array_map('trim', explode(',', $raw)));
+        }
+    }
+}
+
+// Selecciones guardadas (CSV, JSON o array)
+$selected = [];
+$selectedRaw = $exp['chequeos_seleccionados'] ?? null;
+if ($selectedRaw) {
+    if (is_array($selectedRaw)) {
+        $selected = $selectedRaw;
+    } elseif (is_string($selectedRaw)) {
+        $tmp = json_decode($selectedRaw, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($tmp)) {
+            $selected = $tmp;
+        } else {
+            $selected = array_filter(array_map('trim', explode(',', $selectedRaw)));
+        }
+    }
+}
+$selectedNorm = array_map('mb_strtolower', $selected);
 
 ?>
 <!DOCTYPE html>
@@ -77,6 +138,17 @@ if (!$exp) { header('Location: expedientes.php'); exit(); }
                 <div class="form-group"><label>Peso</label><input type="text" name="peso" value="<?php echo htmlspecialchars($exp['peso']); ?>"></div>
                 <div class="form-group"><label>Altura</label><input type="text" name="altura" value="<?php echo htmlspecialchars($exp['altura']); ?>"></div>
                 <div class="form-group"><label>Notas</label><textarea name="notas"><?php echo htmlspecialchars($exp['notas']); ?></textarea></div>
+                <div class="form-group">
+                    <label>Chequeos médicos</label>
+                    <div class="checks-list">
+                        <?php foreach ($checksList as $item): ?>
+                            <?php $isChecked = in_array(mb_strtolower($item), $selectedNorm); ?>
+                            <label style="display:inline-block;margin-right:12px;margin-bottom:6px;">
+                                <input type="checkbox" name="chequeos_seleccionados[]" value="<?php echo htmlspecialchars($item); ?>" <?php if($isChecked) echo 'checked'; ?>> <?php echo htmlspecialchars($item); ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
                 <button class="btn btn-primary" type="submit">Guardar</button>
                 <a class="btn btn-success" href="generar-expediente-pdf.php?id=<?php echo $exp['id']; ?>">Generar PDF</a>
             </form>

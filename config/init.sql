@@ -65,3 +65,6 @@ CREATE TABLE IF NOT EXISTS expedientes (
 
 -- Añadir columna para vincular una cita con un expediente (si aún no existe)
 ALTER TABLE citas ADD COLUMN expediente_id INT DEFAULT NULL;
+
+-- Añadir columna para almacenar chequeos seleccionados en el expediente (CSV o JSON)
+ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS chequeos_seleccionados TEXT DEFAULT NULL;

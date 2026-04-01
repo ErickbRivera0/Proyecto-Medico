@@ -32,20 +32,20 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 require_once __DIR__ . '/vendor/autoload.php';
 use Dompdf\Dompdf;
+use Dompdf\Options;
 
-$html = '<h1>Expediente Clínico</h1>';
-$html .= '<p><strong>ID:</strong> ' . $exp['id'] . '</p>';
-$html .= '<p><strong>Nombre:</strong> ' . htmlspecialchars($exp['nombre']) . '</p>';
-$html .= '<p><strong>Email:</strong> ' . htmlspecialchars($exp['paciente_email']) . '</p>';
-$html .= '<p><strong>Teléfono:</strong> ' . htmlspecialchars($exp['telefono']) . '</p>';
-$html .= '<p><strong>Fecha Nac.:</strong> ' . htmlspecialchars($exp['fecha_nacimiento']) . '</p>';
-$html .= '<p><strong>Sexo:</strong> ' . htmlspecialchars($exp['sexo']) . '</p>';
-$html .= '<p><strong>Alergias:</strong><br>' . nl2br(htmlspecialchars($exp['alergias'])) . '</p>';
-$html .= '<p><strong>Antecedentes:</strong><br>' . nl2br(htmlspecialchars($exp['antecedentes'])) . '</p>';
-$html .= '<p><strong>Medicamentos actuales:</strong><br>' . nl2br(htmlspecialchars($exp['medicamentos_actuales'])) . '</p>';
-$html .= '<p><strong>Notas:</strong><br>' . nl2br(htmlspecialchars($exp['notas'])) . '</p>';
+// Renderizar usando plantilla HTML/CSS para impresión A4
+$options = new Options();
+$options->set('isHtml5ParserEnabled', true);
+$options->set('isRemoteEnabled', true);
+$dompdf = new Dompdf($options);
 
-$dompdf = new Dompdf();
+// Cargar plantilla (expediente_pdf_template.php) y capturar HTML
+ob_start();
+// la plantilla usará la variable $exp
+include __DIR__ . '/expediente_pdf_template.php';
+$html = ob_get_clean();
+
 $dompdf->loadHtml($html);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();

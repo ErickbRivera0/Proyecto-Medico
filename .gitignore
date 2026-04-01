@@ -38,3 +38,4 @@ logs/
 .git/
 composer.lock
 vendor/
+exports/
