@@ -25,15 +25,15 @@ COPY . /var/www/html/
 
 RUN chown -R www-data:www-data /var/www/html
 
+RUN cat <<'EOF' > /usr/local/bin/startup.sh
+#!/bin/bash
+set -e
+cd /var/www/html
+if [ -f composer.json ] && [ ! -d vendor ]; then composer install --no-interaction --prefer-dist --optimize-autoloader; fi
+exec apache2-foreground
+EOF
 
-RUN printf '%s\n' \
-"#!/bin/bash" \
-"set -e" \
-"cd /var/www/html" \
-"if [ -f composer.json ] && [ ! -d vendor ]; then composer install --no-interaction --prefer-dist --optimize-autoloader; fi" \
-"exec apache2-foreground" \
-/usr/local/bin/startup.sh \
-&& chmod +x /usr/local/bin/startup.sh
+RUN chmod +x /usr/local/bin/startup.sh
 
 EXPOSE 80
 
