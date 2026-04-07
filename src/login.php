@@ -29,6 +29,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Redirección según el rol
                 if ($user['rol'] === 'admin') {
                     header("Location: admin/index.php");  // Redirige al panel admin
+                } elseif ($user['rol'] === 'medico') {
+                    header("Location: medico_panel.php");  // Redirige al panel médico
                 } else {
                     header("Location: index.php");        // Redirige al panel usuario
                 }
@@ -220,6 +222,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             color: #764ba2;
         }
 
+        .medico-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .medico-btn {
+            display: inline-block;
+            width: 100%;
+            max-width: 320px;
+            margin-top: 10px;
+            padding: 12px 15px;
+            background: #495057;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .medico-btn:hover {
+            background: #343a40;
+        }
+
         .alert-custom {
             padding: 12px 15px;
             border-radius: 10px;
@@ -356,6 +381,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <span>¿No tienes una cuenta?</span>
                     <a href="registro.php">
                         <i class="fas fa-user-plus"></i> Regístrate aquí
+                    </a>
+                </div>
+                <div class="medico-link">
+                    <a href="medico_login.php" class="medico-btn">
+                        <i class="fas fa-user-md"></i> Ingresar como Médico
                     </a>
                 </div>
             </div>

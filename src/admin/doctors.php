@@ -8,6 +8,13 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] != 'admin') {
     exit();
 }
 
+// Garantizar que la tabla medicos tenga columna password
+try {
+    $pdo->exec("ALTER TABLE medicos ADD COLUMN password VARCHAR(255) DEFAULT NULL");
+} catch (Exception $e) {
+    // Ignorar si ya existe
+}
+
 $mensaje = "";
 $error = "";
 
@@ -21,13 +28,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $especialidad = trim($_POST['especialidad']);
             $telefono = trim($_POST['telefono']);
             $email = trim($_POST['email']);
+            $password = trim($_POST['password']);
             
-            if (!empty($nombre) && !empty($especialidad) && !empty($telefono) && !empty($email)) {
-                $stmt = $pdo->prepare("INSERT INTO medicos (nombre, especialidad, telefono, email) VALUES (?, ?, ?, ?)");
+            if (!empty($nombre) && !empty($especialidad) && !empty($telefono) && !empty($email) && !empty($password)) {
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare("INSERT INTO medicos (nombre, especialidad, telefono, email, password) VALUES (?, ?, ?, ?, ?)");
                 $stmt->bindParam(1, $nombre);
                 $stmt->bindParam(2, $especialidad);
                 $stmt->bindParam(3, $telefono);
                 $stmt->bindParam(4, $email);
+                $stmt->bindParam(5, $hashed_password);
                 
                 if ($stmt->execute()) {
                     $mensaje = "✅ Médico agregado exitosamente";
@@ -35,7 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $error = "❌ Error al agregar médico";
                 }
             } else {
-                $error = "⚠️ Todos los campos son obligatorios";
+                $error = "⚠️ Todos los campos son obligatorios, incluida la contraseña";
             }
         } 
         elseif ($action == 'edit') {
@@ -44,13 +54,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $especialidad = trim($_POST['especialidad']);
             $telefono = trim($_POST['telefono']);
             $email = trim($_POST['email']);
+            $password = trim($_POST['password']);
             
-            $stmt = $pdo->prepare("UPDATE medicos SET nombre=?, especialidad=?, telefono=?, email=? WHERE id=?");
-            $stmt->bindParam(1, $nombre);
-            $stmt->bindParam(2, $especialidad);
-            $stmt->bindParam(3, $telefono);
-            $stmt->bindParam(4, $email);
-            $stmt->bindParam(5, $id, PDO::PARAM_INT);
+            if (!empty($password)) {
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare("UPDATE medicos SET nombre=?, especialidad=?, telefono=?, email=?, password=? WHERE id=?");
+                $stmt->bindParam(1, $nombre);
+                $stmt->bindParam(2, $especialidad);
+                $stmt->bindParam(3, $telefono);
+                $stmt->bindParam(4, $email);
+                $stmt->bindParam(5, $hashed_password);
+                $stmt->bindParam(6, $id, PDO::PARAM_INT);
+            } else {
+                $stmt = $pdo->prepare("UPDATE medicos SET nombre=?, especialidad=?, telefono=?, email=? WHERE id=?");
+                $stmt->bindParam(1, $nombre);
+                $stmt->bindParam(2, $especialidad);
+                $stmt->bindParam(3, $telefono);
+                $stmt->bindParam(4, $email);
+                $stmt->bindParam(5, $id, PDO::PARAM_INT);
+            }
             
             if ($stmt->execute()) {
                 $mensaje = "✅ Médico actualizado exitosamente";
@@ -321,6 +343,12 @@ $medicos = $pdo->query("SELECT * FROM medicos ORDER BY nombre ASC");
                     <input type="email" name="email" id="email" required>
                 </div>
                 
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" name="password" id="password" required>
+                    <small id="passwordHelp" style="color: #666; display: block; margin-top: 5px;">Deja en blanco al editar para mantener la contraseña actual.</small>
+                </div>
+                
                 <button type="submit" class="btn btn-primary">Guardar</button>
             </form>
         </div>
@@ -337,6 +365,9 @@ $medicos = $pdo->query("SELECT * FROM medicos ORDER BY nombre ASC");
                 document.getElementById('especialidad').value = '';
                 document.getElementById('telefono').value = '';
                 document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('password').required = true;
+                document.getElementById('passwordHelp').innerText = 'La contraseña es obligatoria para nuevos médicos.';
             }
         }
         
@@ -349,6 +380,9 @@ $medicos = $pdo->query("SELECT * FROM medicos ORDER BY nombre ASC");
             document.getElementById('especialidad').value = especialidad;
             document.getElementById('telefono').value = telefono;
             document.getElementById('email').value = email;
+            document.getElementById('password').value = '';
+            document.getElementById('password').required = false;
+            document.getElementById('passwordHelp').innerText = 'Deja en blanco para mantener la contraseña actual.';
         }
         
         function deleteDoctor(id, nombre) {

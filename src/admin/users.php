@@ -361,6 +361,7 @@ $usuarios = $pdo->query("SELECT * FROM usuarios ORDER BY fecha_registro DESC");
                     <select name="rol" id="rol" required>
                         <option value="usuario">Usuario</option>
                         <option value="admin">Administrador</option>
+                        <option value="medico">Médico</option>
                     </select>
                 </div>
                 
