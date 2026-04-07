@@ -1,0 +1,57 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "dockerfile"
+  },
+  "deploy": {
+    "startCommand": "apache2-foreground",
+    "restartPolicyType": "always",
+    "restartPolicyMaxRetries": 5
+  },
+  "envs": {
+    "DB_HOST": {
+      "description": "Database host",
+      "default": "mysql"
+    },
+    "DB_USER": {
+      "description": "Database user",
+      "default": "root"
+    },
+    "DB_PASSWORD": {
+      "description": "Database password",
+      "default": "root123"
+    },
+    "DB_NAME": {
+      "description": "Database name",
+      "default": "citas_medicas"
+    },
+    "MYSQL_ROOT_PASSWORD": {
+      "description": "MySQL root password",
+      "default": "root123"
+    },
+    "MYSQL_DATABASE": {
+      "description": "MySQL database",
+      "default": "citas_medicas"
+    },
+    "MYSQL_USER": {
+      "description": "MySQL user",
+      "default": "citas_user"
+    },
+    "MYSQL_PASSWORD": {
+      "description": "MySQL user password",
+      "default": "citas123"
+    },
+    "APP_ENV": {
+      "description": "Application environment",
+      "default": "production"
+    },
+    "APP_DEBUG": {
+      "description": "Debug mode",
+      "default": "false"
+    },
+    "APP_URL": {
+      "description": "Application URL",
+      "default": "https://your-railway-app.up.railway.app"
+    }
+  }
+}
