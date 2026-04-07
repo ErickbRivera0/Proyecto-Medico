@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y apache2 libapache2-mod-fcgid \
     && a2dismod mpm_prefork \
     && a2enmod mpm_event
 
-COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
 
 RUN a2enmod rewrite
 
@@ -32,10 +31,13 @@ RUN chown -R www-data:www-data /var/www/html
 RUN printf '%s\n' \
 "#!/bin/bash" \
 "set -e" \
-"service php8.1-fpm start" \
+"cd /var/www/html" \
+"if [ -f composer.json ] && [ ! -d vendor ]; then composer install --no-interaction --prefer-dist --optimize-autoloader; fi" \
 "exec apache2-foreground" \
 > /usr/local/bin/startup.sh \
 && chmod +x /usr/local/bin/startup.sh
 
 EXPOSE 80
+
+
 CMD ["/usr/local/bin/startup.sh"]
