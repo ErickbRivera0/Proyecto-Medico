@@ -9,9 +9,9 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 // Obtener expedientes
-$stmt = $conn->prepare("SELECT id, paciente_email, nombre, fecha_registro FROM expedientes ORDER BY fecha_registro DESC");
+$stmt = $pdo->prepare("SELECT id, paciente_email, nombre, fecha_registro FROM expedientes ORDER BY fecha_registro DESC");
 $stmt->execute();
-$expedientes = $stmt->get_result();
+$expedientes = $stmt;
 ?>
 
 <!DOCTYPE html>
@@ -43,7 +43,7 @@ $expedientes = $stmt->get_result();
                 <h2>Lista de Expedientes</h2>
                 <p><a href="nuevo-expediente.php" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Expediente</a></p>
 
-                <?php if ($expedientes->num_rows == 0): ?>
+                <?php if ($expedientes->rowCount() == 0): ?>
                     <div class="alert alert-info">No hay expedientes registrados.</div>
                 <?php else: ?>
                     <div class="table-responsive">
@@ -58,7 +58,7 @@ $expedientes = $stmt->get_result();
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php while($exp = $expedientes->fetch_assoc()): ?>
+                                <?php while($exp = $expedientes->fetch()): ?>
                                 <tr>
                                     <td><?php echo $exp['id']; ?></td>
                                     <td><?php echo htmlspecialchars($exp['nombre']); ?></td>

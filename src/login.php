@@ -11,12 +11,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (!empty($email) && !empty($password)) {
 
-        $stmt = $conn->prepare("SELECT * FROM usuarios WHERE email = ? AND estado = 'activo'");
-        $stmt->bind_param("s", $email);
+        $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ? AND estado = 'activo'");
+        $stmt->bindParam(1, $email);
         $stmt->execute();
-        $result = $stmt->get_result();
 
-        if ($user = $result->fetch_assoc()) {
+        if ($user = $stmt->fetch()) {
 
             if (password_verify($password, $user['password'])) {
 

@@ -4,11 +4,11 @@
  */
 
 class Cita {
-    private $conn;
+    private $pdo;
     private $tabla = 'citas';
 
     public function __construct($conexion) {
-        $this->conn = $conexion;
+        $this->pdo = $conexion;
     }
 
     /**
@@ -19,7 +19,9 @@ class Cita {
                 FROM {$this->tabla} c 
                 LEFT JOIN medicos m ON c.medico_id = m.id 
                 ORDER BY c.fecha DESC";
-        return $this->conn->query($sql);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt;
     }
 
     /**
@@ -30,10 +32,10 @@ class Cita {
                 FROM {$this->tabla} c 
                 LEFT JOIN medicos m ON c.medico_id = m.id 
                 WHERE c.id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("i", $id);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(1, $id);
         $stmt->execute();
-        return $stmt->get_result()->fetch_assoc();
+        return $stmt->fetch();
     }
 
     /**
@@ -41,10 +43,10 @@ class Cita {
      */
     public function obtener_por_medico($medico_id) {
         $sql = "SELECT * FROM {$this->tabla} WHERE medico_id = ? ORDER BY fecha DESC";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("i", $medico_id);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(1, $medico_id);
         $stmt->execute();
-        return $stmt->get_result();
+        return $stmt;
     }
 
     /**
@@ -55,10 +57,10 @@ class Cita {
                 FROM {$this->tabla} c 
                 LEFT JOIN medicos m ON c.medico_id = m.id 
                 WHERE c.paciente_email = ? ORDER BY c.fecha DESC";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("s", $email);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(1, $email);
         $stmt->execute();
-        return $stmt->get_result();
+        return $stmt;
     }
 
     /**
@@ -69,9 +71,14 @@ class Cita {
         $sql = "INSERT INTO {$this->tabla} 
                 (paciente_nombre, paciente_email, paciente_telefono, medico_id, fecha, hora, motivo, estado) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'pendiente')";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("sssisss", $paciente_nombre, $paciente_email, $paciente_telefono, 
-                          $medico_id, $fecha, $hora, $motivo);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(1, $paciente_nombre);
+        $stmt->bindParam(2, $paciente_email);
+        $stmt->bindParam(3, $paciente_telefono);
+        $stmt->bindParam(4, $medico_id);
+        $stmt->bindParam(5, $fecha);
+        $stmt->bindParam(6, $hora);
+        $stmt->bindParam(7, $motivo);
         return $stmt->execute();
     }
 
@@ -80,8 +87,12 @@ class Cita {
      */
     public function actualizar($id, $fecha, $hora, $motivo, $estado) {
         $sql = "UPDATE {$this->tabla} SET fecha = ?, hora = ?, motivo = ?, estado = ? WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("ssssi", $fecha, $hora, $motivo, $estado, $id);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(1, $fecha);
+        $stmt->bindParam(2, $hora);
+        $stmt->bindParam(3, $motivo);
+        $stmt->bindParam(4, $estado);
+        $stmt->bindParam(5, $id);
         return $stmt->execute();
     }
 
@@ -90,8 +101,9 @@ class Cita {
      */
     public function cambiar_estado($id, $estado) {
         $sql = "UPDATE {$this->tabla} SET estado = ? WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("si", $estado, $id);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(1, $estado);
+        $stmt->bindParam(2, $id);
         return $stmt->execute();
     }
 
@@ -100,8 +112,8 @@ class Cita {
      */
     public function eliminar($id) {
         $sql = "DELETE FROM {$this->tabla} WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("i", $id);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(1, $id);
         return $stmt->execute();
     }
 
@@ -114,10 +126,10 @@ class Cita {
                 FROM {$this->tabla} c 
                 LEFT JOIN medicos m ON c.medico_id = m.id 
                 WHERE DATE(c.fecha) = ? ORDER BY c.hora ASC";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("s", $hoy);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(1, $hoy);
         $stmt->execute();
-        return $stmt->get_result();
+        return $stmt;
     }
 
     /**
@@ -125,9 +137,10 @@ class Cita {
      */
     public function contar_pendientes() {
         $sql = "SELECT COUNT(*) as total FROM {$this->tabla} WHERE estado = 'pendiente'";
-        $resultado = $this->conn->query($sql);
-        $fila = $resultado->fetch_assoc();
-        return $fila['total'];
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        $result = $stmt->fetch();
+        return $result['total'];
     }
 }
 

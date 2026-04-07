@@ -20,32 +20,30 @@ $user_email = $_SESSION['email'];
 $user_nombre = $_SESSION['usuario'];
 
 // Contar citas activas del usuario
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM citas WHERE paciente_email = ? AND fecha >= CURDATE() AND estado != 'cancelada'");
-$stmt->bind_param("s", $user_email);
+$stmt = $pdo->prepare("SELECT COUNT(*) as total FROM citas WHERE paciente_email = ? AND fecha >= CURDATE() AND estado != 'cancelada'");
+$stmt->bindParam(1, $user_email);
 $stmt->execute();
-$result = $stmt->get_result();
-$citas_activas = $result->fetch_assoc()['total'];
+$citas_activas = $stmt->fetch()['total'];
 
 // Contar total de citas
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM citas WHERE paciente_email = ?");
-$stmt->bind_param("s", $user_email);
+$stmt = $pdo->prepare("SELECT COUNT(*) as total FROM citas WHERE paciente_email = ?");
+$stmt->bindParam(1, $user_email);
 $stmt->execute();
-$result = $stmt->get_result();
-$total_citas = $result->fetch_assoc()['total'];
+$total_citas = $stmt->fetch()['total'];
 
 // Obtener próxima cita
-$stmt = $conn->prepare("SELECT c.fecha, c.hora, c.motivo, m.nombre as medico_nombre, m.especialidad 
+$stmt = $pdo->prepare("SELECT c.fecha, c.hora, c.motivo, m.nombre as medico_nombre, m.especialidad 
                         FROM citas c 
                         JOIN medicos m ON c.medico_id = m.id 
                         WHERE c.paciente_email = ? AND c.fecha >= CURDATE() AND c.estado != 'cancelada' 
                         ORDER BY c.fecha ASC, c.hora ASC LIMIT 1");
-$stmt->bind_param("s", $user_email);
+$stmt->bindParam(1, $user_email);
 $stmt->execute();
-$proxima_cita = $stmt->get_result()->fetch_assoc();
+$proxima_cita = $stmt->fetch();
 
 // Contar médicos activos
-$result = $conn->query("SELECT COUNT(*) as total FROM medicos");
-$total_medicos = $result->fetch_assoc()['total'];
+$result = $pdo->query("SELECT COUNT(*) as total FROM medicos");
+$total_medicos = $result->fetch()['total'];
 ?>
 
 <!DOCTYPE html>

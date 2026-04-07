@@ -15,7 +15,7 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $id = (int)$_GET['id'];
 
 // Asegurar que la columna para chequeos exista (migración ligera en runtime)
-$conn->query("ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS chequeos_seleccionados TEXT DEFAULT NULL");
+$pdo->exec("ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS chequeos_seleccionados TEXT DEFAULT NULL");
 
 // Procesar actualización
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -39,15 +39,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $update_sql = 'UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ?, chequeos_seleccionados = ? WHERE id = ?';
-    $up = $conn->prepare($update_sql);
+    $up = $pdo->prepare($update_sql);
     if ($up) {
-        $up->bind_param('ssssssssssssi', $nombre, $telefono, $fecha_nacimiento, $sexo, $direccion, $alergias, $antecedentes, $medicamentos, $peso, $altura, $notas, $chequeos_selected_json, $id);
+        $up->bindParam(1, $nombre);
+        $up->bindParam(2, $telefono);
+        $up->bindParam(3, $fecha_nacimiento);
+        $up->bindParam(4, $sexo);
+        $up->bindParam(5, $direccion);
+        $up->bindParam(6, $alergias);
+        $up->bindParam(7, $antecedentes);
+        $up->bindParam(8, $medicamentos);
+        $up->bindParam(9, $peso);
+        $up->bindParam(10, $altura);
+        $up->bindParam(11, $notas);
+        $up->bindParam(12, $chequeos_selected_json);
+        $up->bindParam(13, $id, PDO::PARAM_INT);
         $up->execute();
     } else {
         // Si no se pudo preparar (p. ej. columna ausente por alguna razón), intentar sin el campo de chequeos
-        $up2 = $conn->prepare('UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ? WHERE id = ?');
+        $up2 = $pdo->prepare('UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ? WHERE id = ?');
         if ($up2) {
-            $up2->bind_param('sssssssssssi', $nombre, $telefono, $fecha_nacimiento, $sexo, $direccion, $alergias, $antecedentes, $medicamentos, $peso, $altura, $notas, $id);
+            $up2->bindParam(1, $nombre);
+            $up2->bindParam(2, $telefono);
+            $up2->bindParam(3, $fecha_nacimiento);
+            $up2->bindParam(4, $sexo);
+            $up2->bindParam(5, $direccion);
+            $up2->bindParam(6, $alergias);
+            $up2->bindParam(7, $antecedentes);
+            $up2->bindParam(8, $medicamentos);
+            $up2->bindParam(9, $peso);
+            $up2->bindParam(10, $altura);
+            $up2->bindParam(11, $notas);
+            $up2->bindParam(12, $id, PDO::PARAM_INT);
             $up2->execute();
         } else {
             error_log('No se pudo preparar la actualización del expediente.');
@@ -58,10 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Cargar datos
-$q = $conn->prepare('SELECT * FROM expedientes WHERE id = ? LIMIT 1');
-$q->bind_param('i', $id);
+$q = $pdo->prepare('SELECT * FROM expedientes WHERE id = ? LIMIT 1');
+$q->bindParam(1, $id, PDO::PARAM_INT);
 $q->execute();
-$exp = $q->get_result()->fetch_assoc();
+$exp = $q->fetch();
 if (!$exp) { header('Location: expedientes.php'); exit(); }
 
 // Preparar lista de chequeos y selecciones actuales (para pre-marcar checkboxes)

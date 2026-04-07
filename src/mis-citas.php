@@ -11,14 +11,14 @@ if (!isset($_SESSION['usuario'])) {
 $user_email = $_SESSION['email'];
 
 // Obtener citas del usuario
-$stmt = $conn->prepare("SELECT c.*, m.nombre as medico_nombre, m.especialidad 
+$stmt = $pdo->prepare("SELECT c.*, m.nombre as medico_nombre, m.especialidad 
                         FROM citas c 
                         JOIN medicos m ON c.medico_id = m.id 
                         WHERE c.paciente_email = ? 
                         ORDER BY c.fecha DESC, c.hora DESC");
-$stmt->bind_param("s", $user_email);
+$stmt->bindParam(1, $user_email);
 $stmt->execute();
-$citas = $stmt->get_result();
+$citas = $stmt;
 ?>
 
 <!DOCTYPE html>
@@ -49,7 +49,7 @@ $citas = $stmt->get_result();
             <section class="citas-tabla">
                 <h2><i class="fas fa-calendar-alt"></i> Mis Citas Médicas</h2>
                 
-                <?php if ($citas->num_rows == 0): ?>
+                <?php if ($citas->rowCount() == 0): ?>
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i> No tienes citas registradas. 
                         <a href="agendar-cita.php">Agenda tu primera cita aquí</a>
@@ -69,7 +69,7 @@ $citas = $stmt->get_result();
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php while($cita = $citas->fetch_assoc()): ?>
+                                <?php while($cita = $citas->fetch()): ?>
                                 <tr>
                                     <td><?php echo date('d/m/Y', strtotime($cita['fecha'])); ?></td>
                                     <td><?php echo $cita['hora']; ?></td>

@@ -25,19 +25,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $estado = trim($_POST['estado']);
             
             // Verificar si el email ya existe
-            $check = $conn->prepare("SELECT id FROM usuarios WHERE email = ?");
-            $check->bind_param("s", $email);
+            $check = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+            $check->bindParam(1, $email);
             $check->execute();
-            $check->store_result();
             
-            if ($check->num_rows > 0) {
+            if ($check->rowCount() > 0) {
                 $error = "❌ Este email ya está registrado";
             } elseif (!empty($nombre) && !empty($email) && !empty($password)) {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                 $fecha_registro = date('Y-m-d H:i:s');
                 
-                $stmt = $conn->prepare("INSERT INTO usuarios (nombre, email, telefono, password, rol, estado, fecha_registro) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("sssssss", $nombre, $email, $telefono, $hashed_password, $rol, $estado, $fecha_registro);
+                $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, email, telefono, password, rol, estado, fecha_registro) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bindParam(1, $nombre);
+                $stmt->bindParam(2, $email);
+                $stmt->bindParam(3, $telefono);
+                $stmt->bindParam(4, $hashed_password);
+                $stmt->bindParam(5, $rol);
+                $stmt->bindParam(6, $estado);
+                $stmt->bindParam(7, $fecha_registro);
                 
                 if ($stmt->execute()) {
                     $mensaje = "✅ Usuario agregado exitosamente";
@@ -59,11 +64,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             if (!empty($password)) {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("UPDATE usuarios SET nombre=?, email=?, telefono=?, password=?, rol=?, estado=? WHERE id=?");
-                $stmt->bind_param("ssssssi", $nombre, $email, $telefono, $hashed_password, $rol, $estado, $id);
+                $stmt = $pdo->prepare("UPDATE usuarios SET nombre=?, email=?, telefono=?, password=?, rol=?, estado=? WHERE id=?");
+                $stmt->bindParam(1, $nombre);
+                $stmt->bindParam(2, $email);
+                $stmt->bindParam(3, $telefono);
+                $stmt->bindParam(4, $hashed_password);
+                $stmt->bindParam(5, $rol);
+                $stmt->bindParam(6, $estado);
+                $stmt->bindParam(7, $id, PDO::PARAM_INT);
             } else {
-                $stmt = $conn->prepare("UPDATE usuarios SET nombre=?, email=?, telefono=?, rol=?, estado=? WHERE id=?");
-                $stmt->bind_param("sssssi", $nombre, $email, $telefono, $rol, $estado, $id);
+                $stmt = $pdo->prepare("UPDATE usuarios SET nombre=?, email=?, telefono=?, rol=?, estado=? WHERE id=?");
+                $stmt->bindParam(1, $nombre);
+                $stmt->bindParam(2, $email);
+                $stmt->bindParam(3, $telefono);
+                $stmt->bindParam(4, $rol);
+                $stmt->bindParam(5, $estado);
+                $stmt->bindParam(6, $id, PDO::PARAM_INT);
             }
             
             if ($stmt->execute()) {
@@ -74,8 +90,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         elseif ($action == 'delete') {
             $id = $_POST['id'];
-            $stmt = $conn->prepare("DELETE FROM usuarios WHERE id=?");
-            $stmt->bind_param("i", $id);
+            $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id=?");
+            $stmt->bindParam(1, $id, PDO::PARAM_INT);
             
             if ($stmt->execute()) {
                 $mensaje = "✅ Usuario eliminado exitosamente";
@@ -87,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 // Obtener lista de usuarios
-$usuarios = $conn->query("SELECT * FROM usuarios ORDER BY fecha_registro DESC");
+$usuarios = $pdo->query("SELECT * FROM usuarios ORDER BY fecha_registro DESC");
 ?>
 
 <!DOCTYPE html>
@@ -268,8 +284,8 @@ $usuarios = $conn->query("SELECT * FROM usuarios ORDER BY fecha_registro DESC");
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if($usuarios->num_rows > 0): ?>
-                                <?php while($usuario = $usuarios->fetch_assoc()): ?>
+                            <?php if($usuarios->rowCount() > 0): ?>
+                                <?php while($usuario = $usuarios->fetch()): ?>
                                 <tr>
                                     <td><?php echo $usuario['id']; ?></td>
                                     <td><?php echo htmlspecialchars($usuario['nombre']); ?></td>

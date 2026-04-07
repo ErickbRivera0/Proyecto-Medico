@@ -28,21 +28,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Email y nombre son obligatorios';
     } else {
         // Insertar o actualizar si existe
-        $check = $conn->prepare('SELECT id FROM expedientes WHERE paciente_email = ? LIMIT 1');
-        $check->bind_param('s', $email);
+        $check = $pdo->prepare('SELECT id FROM expedientes WHERE paciente_email = ? LIMIT 1');
+        $check->bindParam(1, $email);
         $check->execute();
-        $res = $check->get_result();
+        $res = $check;
 
-        if ($res && $res->num_rows > 0) {
-            $row = $res->fetch_assoc();
+        if ($res && $res->rowCount() > 0) {
+            $row = $res->fetch();
             $id = $row['id'];
-            $up = $conn->prepare('UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ? WHERE id = ?');
-            $up->bind_param('sssssssssssi', $nombre, $telefono, $fecha_nacimiento, $sexo, $direccion, $alergias, $antecedentes, $medicamentos, $peso, $altura, $notas, $id);
+            $up = $pdo->prepare('UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ? WHERE id = ?');
+            $up->bindParam(1, $nombre);
+            $up->bindParam(2, $telefono);
+            $up->bindParam(3, $fecha_nacimiento);
+            $up->bindParam(4, $sexo);
+            $up->bindParam(5, $direccion);
+            $up->bindParam(6, $alergias);
+            $up->bindParam(7, $antecedentes);
+            $up->bindParam(8, $medicamentos);
+            $up->bindParam(9, $peso);
+            $up->bindParam(10, $altura);
+            $up->bindParam(11, $notas);
+            $up->bindParam(12, $id, PDO::PARAM_INT);
             $up->execute();
             $success = 'Expediente actualizado';
         } else {
-            $ins = $conn->prepare('INSERT INTO expedientes (paciente_email, nombre, telefono, fecha_nacimiento, sexo, direccion, alergias, antecedentes, medicamentos_actuales, peso, altura, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            $ins->bind_param('ssssssssssss', $email, $nombre, $telefono, $fecha_nacimiento, $sexo, $direccion, $alergias, $antecedentes, $medicamentos, $peso, $altura, $notas);
+            $ins = $pdo->prepare('INSERT INTO expedientes (paciente_email, nombre, telefono, fecha_nacimiento, sexo, direccion, alergias, antecedentes, medicamentos_actuales, peso, altura, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $ins->bindParam(1, $email);
+            $ins->bindParam(2, $nombre);
+            $ins->bindParam(3, $telefono);
+            $ins->bindParam(4, $fecha_nacimiento);
+            $ins->bindParam(5, $sexo);
+            $ins->bindParam(6, $direccion);
+            $ins->bindParam(7, $alergias);
+            $ins->bindParam(8, $antecedentes);
+            $ins->bindParam(9, $medicamentos);
+            $ins->bindParam(10, $peso);
+            $ins->bindParam(11, $altura);
+            $ins->bindParam(12, $notas);
             $ins->execute();
             $success = 'Expediente creado';
         }

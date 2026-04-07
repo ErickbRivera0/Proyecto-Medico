@@ -16,8 +16,9 @@ if (isset($_POST['action']) && $_POST['action'] == 'update_status') {
     $id = $_POST['id'];
     $estado = $_POST['estado'];
     
-    $stmt = $conn->prepare("UPDATE citas SET estado=? WHERE id=?");
-    $stmt->bind_param("si", $estado, $id);
+    $stmt = $pdo->prepare("UPDATE citas SET estado=? WHERE id=?");
+    $stmt->bindParam(1, $estado);
+    $stmt->bindParam(2, $id, PDO::PARAM_INT);
     
     if ($stmt->execute()) {
         $mensaje = "✅ Estado de la cita actualizado";
@@ -27,7 +28,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'update_status') {
 }
 
 // Obtener todas las citas
-$citas = $conn->query("
+$citas = $pdo->query("
     SELECT c.*, m.nombre as medico_nombre, m.especialidad 
     FROM citas c 
     JOIN medicos m ON c.medico_id = m.id 
@@ -171,8 +172,8 @@ $citas = $conn->query("
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if($citas->num_rows > 0): ?>
-                                <?php while($cita = $citas->fetch_assoc()): ?>
+                            <?php if($citas->rowCount() > 0): ?>
+                                <?php while($cita = $citas->fetch()): ?>
                                 <tr>
                                     <td><?php echo $cita['id']; ?></td>
                                     <td><?php echo htmlspecialchars($cita['paciente_nombre']); ?></td>

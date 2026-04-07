@@ -23,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     try {
         // Iniciar transacción para mantener consistencia
-        $conn->begin_transaction();
+        $pdo->beginTransaction();
 
         // --- Manejo del expediente (si se enviaron datos) ---
         $expediente_id = null;
@@ -42,53 +42,89 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($hasExpedienteData) {
             // Verificar si ya existe expediente para este email
-            $q = $conn->prepare("SELECT id FROM expedientes WHERE paciente_email = ? LIMIT 1");
-            $q->bind_param("s", $exp_paciente_email);
+            $q = $pdo->prepare("SELECT id FROM expedientes WHERE paciente_email = ? LIMIT 1");
+            $q->bindParam(1, $exp_paciente_email);
             $q->execute();
-            $res = $q->get_result();
+            $res = $q;
 
-            if ($res && $res->num_rows > 0) {
-                $row = $res->fetch_assoc();
+            if ($res && $res->rowCount() > 0) {
+                $row = $res->fetch();
                 $expediente_id = $row['id'];
                 // Actualizar expediente
-                $up = $conn->prepare("UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ? WHERE id = ?");
-                $up->bind_param("ssssssssssi", $nombre, $telefono, $exp_fecha_nacimiento, $exp_sexo, $exp_direccion, $exp_alergias, $exp_antecedentes, $exp_medicamentos, $exp_peso, $exp_altura, $exp_notas, $expediente_id);
+                $up = $pdo->prepare("UPDATE expedientes SET nombre = ?, telefono = ?, fecha_nacimiento = ?, sexo = ?, direccion = ?, alergias = ?, antecedentes = ?, medicamentos_actuales = ?, peso = ?, altura = ?, notas = ? WHERE id = ?");
+                $up->bindParam(1, $nombre);
+                $up->bindParam(2, $telefono);
+                $up->bindParam(3, $exp_fecha_nacimiento);
+                $up->bindParam(4, $exp_sexo);
+                $up->bindParam(5, $exp_direccion);
+                $up->bindParam(6, $exp_alergias);
+                $up->bindParam(7, $exp_antecedentes);
+                $up->bindParam(8, $exp_medicamentos);
+                $up->bindParam(9, $exp_peso);
+                $up->bindParam(10, $exp_altura);
+                $up->bindParam(11, $exp_notas);
+                $up->bindParam(12, $expediente_id, PDO::PARAM_INT);
                 $up->execute();
             } else {
                 // Insertar nuevo expediente
-                $ins = $conn->prepare("INSERT INTO expedientes (paciente_email, nombre, telefono, fecha_nacimiento, sexo, direccion, alergias, antecedentes, medicamentos_actuales, peso, altura, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $ins->bind_param("ssssssssssss", $exp_paciente_email, $nombre, $telefono, $exp_fecha_nacimiento, $exp_sexo, $exp_direccion, $exp_alergias, $exp_antecedentes, $exp_medicamentos, $exp_peso, $exp_altura, $exp_notas);
+                $ins = $pdo->prepare("INSERT INTO expedientes (paciente_email, nombre, telefono, fecha_nacimiento, sexo, direccion, alergias, antecedentes, medicamentos_actuales, peso, altura, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $ins->bindParam(1, $exp_paciente_email);
+                $ins->bindParam(2, $nombre);
+                $ins->bindParam(3, $telefono);
+                $ins->bindParam(4, $exp_fecha_nacimiento);
+                $ins->bindParam(5, $exp_sexo);
+                $ins->bindParam(6, $exp_direccion);
+                $ins->bindParam(7, $exp_alergias);
+                $ins->bindParam(8, $exp_antecedentes);
+                $ins->bindParam(9, $exp_medicamentos);
+                $ins->bindParam(10, $exp_peso);
+                $ins->bindParam(11, $exp_altura);
+                $ins->bindParam(12, $exp_notas);
                 $ins->execute();
-                $expediente_id = $conn->insert_id;
+                $expediente_id = $pdo->lastInsertId();
             }
         }
 
         // 🔥 Evitar citas duplicadas (mismo médico, fecha y hora)
-        $check = $conn->prepare("SELECT id FROM citas WHERE medico_id = ? AND fecha = ? AND hora = ?");
-        $check->bind_param("iss", $medico, $fecha, $hora);
+        $check = $pdo->prepare("SELECT id FROM citas WHERE medico_id = ? AND fecha = ? AND hora = ?");
+        $check->bindParam(1, $medico, PDO::PARAM_INT);
+        $check->bindParam(2, $fecha);
+        $check->bindParam(3, $hora);
         $check->execute();
-        $check->store_result();
 
-        if ($check->num_rows > 0) {
+        if ($check->rowCount() > 0) {
             header("Location: agendar-cita.php?mensaje=⚠️ Ese horario ya está ocupado");
             exit();
         }
 
         // Insertar cita (vinculando expediente si aplica)
         if ($expediente_id) {
-            $stmt = $conn->prepare("INSERT INTO citas 
-                (paciente_nombre, paciente_email, paciente_telefono, medico_id, fecha, hora, motivo, expediente_id) 
+            $stmt = $pdo->prepare("INSERT INTO citas
+                (paciente_nombre, paciente_email, paciente_telefono, medico_id, fecha, hora, motivo, expediente_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssisssi", $nombre, $email, $telefono, $medico, $fecha, $hora, $motivo, $expediente_id);
+            $stmt->bindParam(1, $nombre);
+            $stmt->bindParam(2, $email);
+            $stmt->bindParam(3, $telefono);
+            $stmt->bindParam(4, $medico, PDO::PARAM_INT);
+            $stmt->bindParam(5, $fecha);
+            $stmt->bindParam(6, $hora);
+            $stmt->bindParam(7, $motivo);
+            $stmt->bindParam(8, $expediente_id, PDO::PARAM_INT);
         } else {
-            $stmt = $conn->prepare("INSERT INTO citas 
-                (paciente_nombre, paciente_email, paciente_telefono, medico_id, fecha, hora, motivo) 
+            $stmt = $pdo->prepare("INSERT INTO citas
+                (paciente_nombre, paciente_email, paciente_telefono, medico_id, fecha, hora, motivo)
                 VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssisss", $nombre, $email, $telefono, $medico, $fecha, $hora, $motivo);
+            $stmt->bindParam(1, $nombre);
+            $stmt->bindParam(2, $email);
+            $stmt->bindParam(3, $telefono);
+            $stmt->bindParam(4, $medico, PDO::PARAM_INT);
+            $stmt->bindParam(5, $fecha);
+            $stmt->bindParam(6, $hora);
+            $stmt->bindParam(7, $motivo);
         }
 
         $stmt->execute();
-        $cita_id = $conn->insert_id;
+        $cita_id = $pdo->lastInsertId();
 
         // --- Generar PDFs (si está disponible Dompdf) ---
         $exportsDir = __DIR__ . '/exports';
@@ -101,10 +137,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             try {
                 // Generar PDF de expediente
                 if ($expediente_id) {
-                    $expQ = $conn->prepare("SELECT * FROM expedientes WHERE id = ? LIMIT 1");
-                    $expQ->bind_param("i", $expediente_id);
+                    $expQ = $pdo->prepare("SELECT * FROM expedientes WHERE id = ? LIMIT 1");
+                    $expQ->bindParam(1, $expediente_id, PDO::PARAM_INT);
                     $expQ->execute();
-                    $expData = $expQ->get_result()->fetch_assoc();
+                    $expData = $expQ->fetch();
 
                     $htmlExp = '<h1>Expediente Clínico</h1>';
                     $htmlExp .= '<p><strong>Nombre:</strong> '.htmlspecialchars($expData['nombre']).'</p>';
@@ -126,10 +162,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
 
                 // Generar PDF de la cita
-                $citaQ = $conn->prepare("SELECT c.*, m.nombre as medico_nombre, m.especialidad FROM citas c LEFT JOIN medicos m ON c.medico_id = m.id WHERE c.id = ? LIMIT 1");
-                $citaQ->bind_param("i", $cita_id);
+                $citaQ = $pdo->prepare("SELECT c.*, m.nombre as medico_nombre, m.especialidad FROM citas c LEFT JOIN medicos m ON c.medico_id = m.id WHERE c.id = ? LIMIT 1");
+                $citaQ->bindParam(1, $cita_id, PDO::PARAM_INT);
                 $citaQ->execute();
-                $citaData = $citaQ->get_result()->fetch_assoc();
+                $citaData = $citaQ->fetch();
 
                 $htmlCita = '<h1>Comprobante de Cita</h1>';
                 $htmlCita .= '<p><strong>Paciente:</strong> '.htmlspecialchars($citaData['paciente_nombre']).'</p>';
@@ -152,16 +188,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
 
-        $conn->commit();
+        $pdo->commit();
 
         header("Location: mis-citas.php?mensaje=✅ Cita agendada correctamente");
         exit();
 
     } catch (Exception $e) {
         // Intentar rollback si la transacción está activa
-        if ($conn && $conn->errno) {
-            $conn->rollback();
-        }
+        $pdo->rollback();
         error_log('procesar-cita.php - Exception: ' . $e->getMessage());
         header("Location: agendar-cita.php?mensaje=Error al guardar cita");
         exit();

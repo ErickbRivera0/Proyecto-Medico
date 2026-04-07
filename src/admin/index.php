@@ -9,15 +9,15 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] != 'admin') {
 }
 
 // Obtener estadísticas
-$total_medicos = $conn->query("SELECT COUNT(*) as total FROM medicos")->fetch_assoc()['total'];
-$total_usuarios = $conn->query("SELECT COUNT(*) as total FROM usuarios WHERE rol = 'usuario'")->fetch_assoc()['total'];
-$total_admin = $conn->query("SELECT COUNT(*) as total FROM usuarios WHERE rol = 'admin'")->fetch_assoc()['total'];
-$total_citas = $conn->query("SELECT COUNT(*) as total FROM citas")->fetch_assoc()['total'];
-$citas_hoy = $conn->query("SELECT COUNT(*) as total FROM citas WHERE fecha = CURDATE() AND estado != 'cancelada'")->fetch_assoc()['total'];
-$citas_pendientes = $conn->query("SELECT COUNT(*) as total FROM citas WHERE estado = 'pendiente'")->fetch_assoc()['total'];
+$total_medicos = $pdo->query("SELECT COUNT(*) as total FROM medicos")->fetch()['total'];
+$total_usuarios = $pdo->query("SELECT COUNT(*) as total FROM usuarios WHERE rol = 'usuario'")->fetch()['total'];
+$total_admin = $pdo->query("SELECT COUNT(*) as total FROM usuarios WHERE rol = 'admin'")->fetch()['total'];
+$total_citas = $pdo->query("SELECT COUNT(*) as total FROM citas")->fetch()['total'];
+$citas_hoy = $pdo->query("SELECT COUNT(*) as total FROM citas WHERE fecha = CURDATE() AND estado != 'cancelada'")->fetch()['total'];
+$citas_pendientes = $pdo->query("SELECT COUNT(*) as total FROM citas WHERE estado = 'pendiente'")->fetch()['total'];
 
 // Obtener próximas citas (próximos 7 días)
-$proximas_citas = $conn->query("
+$proximas_citas = $pdo->query("
     SELECT c.*, m.nombre as medico_nombre, u.nombre as paciente_nombre 
     FROM citas c 
     JOIN medicos m ON c.medico_id = m.id 
@@ -299,8 +299,8 @@ $proximas_citas = $conn->query("
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if($proximas_citas->num_rows > 0): ?>
-                                <?php while($cita = $proximas_citas->fetch_assoc()): ?>
+                            <?php if($proximas_citas->rowCount() > 0): ?>
+                                <?php while($cita = $proximas_citas->fetch()): ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($cita['paciente_nombre']); ?></td>
                                     <td><?php echo htmlspecialchars($cita['medico_nombre']); ?></td>

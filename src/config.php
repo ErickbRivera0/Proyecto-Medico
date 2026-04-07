@@ -7,17 +7,13 @@ define('DB_PASSWORD', getenv('DB_PASSWORD') ?: 'root123');
 define('DB_NAME', getenv('DB_NAME') ?: 'citas_medicas');
 //define('BASE_URL', 'http://localhost/Proyecto-Citas-Medicas-main/src');
 try {
-// Crear conexión
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
-
-// Verificar conexión
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
-}
-
-// Establecer charset
-$conn->set_charset("utf8");
-} catch (mysqli_sql_exception $e) {
+    // Crear conexión PDO
+    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASSWORD);
+    // Configurar PDO para que lance excepciones en errores
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Configurar el modo de fetch por defecto
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
     // Log del error (en producción no mostrar detalles)
     error_log("Error de conexión: " . $e->getMessage());
     die("❌ Error de conexión con la base de datos. Por favor, intenta más tarde.");

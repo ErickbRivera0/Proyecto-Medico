@@ -9,7 +9,7 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 // Obtener médicos
-$medicos = $conn->query("SELECT * FROM medicos ORDER BY nombre ASC");
+$medicos = $pdo->query("SELECT * FROM medicos ORDER BY nombre ASC");
 ?>
 
 <!DOCTYPE html>
@@ -41,7 +41,7 @@ $medicos = $conn->query("SELECT * FROM medicos ORDER BY nombre ASC");
                 <p class="text-center mb-4">Contamos con profesionales altamente calificados para tu atención médica</p>
                 
                 <div class="medicos-grid">
-                    <?php while($medico = $medicos->fetch_assoc()): ?>
+                    <?php while($medico = $medicos->fetch()): ?>
                     <div class="medico-card">
                         <div class="medico-header">
                             <h3><i class="fas fa-user-md"></i> <?php echo htmlspecialchars($medico['nombre']); ?></h3>

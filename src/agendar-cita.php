@@ -67,8 +67,8 @@ if (!isset($_SESSION['usuario'])) {
                             <option value="">-- Selecciona un médico --</option>
                             <?php
                             $sql = "SELECT id, nombre, especialidad FROM medicos ORDER BY nombre ASC";
-                            $resultado = $conn->query($sql);
-                            while ($medico = $resultado->fetch_assoc()) {
+                            $resultado = $pdo->query($sql);
+                            while ($medico = $resultado->fetch()) {
                                 echo "<option value='" . $medico['id'] . "'>" . htmlspecialchars($medico['nombre']) . " - " . htmlspecialchars($medico['especialidad']) . "</option>";
                             }
                             ?>

@@ -23,8 +23,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $email = trim($_POST['email']);
             
             if (!empty($nombre) && !empty($especialidad) && !empty($telefono) && !empty($email)) {
-                $stmt = $conn->prepare("INSERT INTO medicos (nombre, especialidad, telefono, email) VALUES (?, ?, ?, ?)");
-                $stmt->bind_param("ssss", $nombre, $especialidad, $telefono, $email);
+                $stmt = $pdo->prepare("INSERT INTO medicos (nombre, especialidad, telefono, email) VALUES (?, ?, ?, ?)");
+                $stmt->bindParam(1, $nombre);
+                $stmt->bindParam(2, $especialidad);
+                $stmt->bindParam(3, $telefono);
+                $stmt->bindParam(4, $email);
                 
                 if ($stmt->execute()) {
                     $mensaje = "✅ Médico agregado exitosamente";
@@ -42,8 +45,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $telefono = trim($_POST['telefono']);
             $email = trim($_POST['email']);
             
-            $stmt = $conn->prepare("UPDATE medicos SET nombre=?, especialidad=?, telefono=?, email=? WHERE id=?");
-            $stmt->bind_param("ssssi", $nombre, $especialidad, $telefono, $email, $id);
+            $stmt = $pdo->prepare("UPDATE medicos SET nombre=?, especialidad=?, telefono=?, email=? WHERE id=?");
+            $stmt->bindParam(1, $nombre);
+            $stmt->bindParam(2, $especialidad);
+            $stmt->bindParam(3, $telefono);
+            $stmt->bindParam(4, $email);
+            $stmt->bindParam(5, $id, PDO::PARAM_INT);
             
             if ($stmt->execute()) {
                 $mensaje = "✅ Médico actualizado exitosamente";
@@ -53,8 +60,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         elseif ($action == 'delete') {
             $id = $_POST['id'];
-            $stmt = $conn->prepare("DELETE FROM medicos WHERE id=?");
-            $stmt->bind_param("i", $id);
+            $stmt = $pdo->prepare("DELETE FROM medicos WHERE id=?");
+            $stmt->bindParam(1, $id, PDO::PARAM_INT);
             
             if ($stmt->execute()) {
                 $mensaje = "✅ Médico eliminado exitosamente";
@@ -66,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 // Obtener lista de médicos
-$medicos = $conn->query("SELECT * FROM medicos ORDER BY nombre ASC");
+$medicos = $pdo->query("SELECT * FROM medicos ORDER BY nombre ASC");
 ?>
 
 <!DOCTYPE html>
@@ -253,8 +260,8 @@ $medicos = $conn->query("SELECT * FROM medicos ORDER BY nombre ASC");
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if($medicos->num_rows > 0): ?>
-                                <?php while($medico = $medicos->fetch_assoc()): ?>
+                            <?php if($medicos->rowCount() > 0): ?>
+                                <?php while($medico = $medicos->fetch()): ?>
                                 <tr>
                                     <td><?php echo $medico['id']; ?></td>
                                     <td><?php echo htmlspecialchars($medico['nombre']); ?></td>

@@ -1,3 +1,6 @@
+-- Establecer collation de la base de datos
+ALTER DATABASE citas_medicas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Crear tabla de médicos
 CREATE TABLE IF NOT EXISTS medicos (
     id INT PRIMARY KEY AUTO_INCREMENT,

@@ -23,12 +23,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "⚠️ Las contraseñas no coinciden";
     } else {
         // Verificar si el email ya existe
-        $stmt = $conn->prepare("SELECT id FROM usuarios WHERE email = ?");
-        $stmt->bind_param("s", $email);
+        $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+        $stmt->bindParam(1, $email);
         $stmt->execute();
-        $result = $stmt->get_result();
+        $result = $stmt;
         
-        if ($result->num_rows > 0) {
+        if ($result->rowCount() > 0) {
             $error = "❌ Este email ya está registrado";
         } else {
             // Encriptar contraseña
@@ -38,8 +38,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $fecha_registro = date('Y-m-d H:i:s');
             
             // Insertar usuario
-            $stmt = $conn->prepare("INSERT INTO usuarios (nombre, email, telefono, password, rol, estado, fecha_registro) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssss", $nombre, $email, $telefono, $hashed_password, $rol, $estado, $fecha_registro);
+            $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, email, telefono, password, rol, estado, fecha_registro) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bindParam(1, $nombre);
+            $stmt->bindParam(2, $email);
+            $stmt->bindParam(3, $telefono);
+            $stmt->bindParam(4, $hashed_password);
+            $stmt->bindParam(5, $rol);
+            $stmt->bindParam(6, $estado);
+            $stmt->bindParam(7, $fecha_registro);
             
             if ($stmt->execute()) {
                 $_SESSION['registro_exitoso'] = "✅ ¡Registro exitoso! Ahora puedes iniciar sesión.";

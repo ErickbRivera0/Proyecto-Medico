@@ -10,10 +10,10 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $id = (int)$_GET['id'];
 
 // Obtener expediente
-$q = $conn->prepare('SELECT * FROM expedientes WHERE id = ? LIMIT 1');
-$q->bind_param('i', $id);
+$q = $pdo->prepare('SELECT * FROM expedientes WHERE id = ? LIMIT 1');
+$q->bindParam(1, $id, PDO::PARAM_INT);
 $q->execute();
-$exp = $q->get_result()->fetch_assoc();
+$exp = $q->fetch();
 
 if (!$exp) {
     header('HTTP/1.1 404 Not Found');
