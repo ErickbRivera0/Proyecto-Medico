@@ -1,14 +1,12 @@
 FROM php:8.1-fpm
 
 
-RUN a2dismod mpm_event && \
-    a2enmod mpm_prefork
-
 RUN apt-get update && apt-get install -y apache2 libapache2-mod-fcgid \
+    && a2dismod mpm_prefork mpm_worker \
+    && a2enmod mpm_event \
     && a2enmod proxy_fcgi setenvif \
-    && a2enconf php8.1-fpm \
-    && a2dismod mpm_prefork \
-    && a2enmod mpm_event
+    && echo '<FilesMatch .php$>\n    SetHandler "proxy:unix:/run/php/php8.1-fpm.sock|fcgi://localhost/"\n</FilesMatch>' > /etc/apache2/conf-available/php8.1-fpm.conf \
+    && a2enconf php8.1-fpm
 
 
 RUN a2enmod rewrite
@@ -34,7 +32,7 @@ RUN printf '%s\n' \
 "cd /var/www/html" \
 "if [ -f composer.json ] && [ ! -d vendor ]; then composer install --no-interaction --prefer-dist --optimize-autoloader; fi" \
 "exec apache2-foreground" \
-> /usr/local/bin/startup.sh \
+/usr/local/bin/startup.sh \
 && chmod +x /usr/local/bin/startup.sh
 
 EXPOSE 80
