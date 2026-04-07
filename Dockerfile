@@ -1,6 +1,6 @@
 FROM php:8.1-apache
 
-RUN /bin/sh -c 'set -eu; a2dismod mpm_event mpm_worker || true; a2enmod mpm_prefork || true; exec docker-entrypoint.sh "$@"' -- apache2-foreground
+RUN a2dismod mpm_worker mpm_event && a2enmod mpm_prefork rewrite
 
 
 RUN curl -sS https://getcomposer.org/installer | php -- \
