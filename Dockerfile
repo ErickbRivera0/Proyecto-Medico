@@ -1,7 +1,10 @@
 FROM php:8.1-apache
 
-RUN a2dismod mpm_worker mpm_event && a2enmod mpm_prefork rewrite
-
+Limpiar completamente archivos de configuración MPM conflictivas
+RUN rm -f /etc/apache2/mods-enabled/mpm_.load && \
+    rm -f /etc/apache2/mods-available/mpm_worker. && \
+    rm -f /etc/apache2/mods-available/mpm_event.* && \
+    a2enmod mpm_prefork rewrite
 
 RUN curl -sS https://getcomposer.org/installer | php -- \
     --install-dir=/usr/local/bin \
