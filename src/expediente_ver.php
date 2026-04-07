@@ -15,7 +15,11 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $id = (int)$_GET['id'];
 
 // Asegurar que la columna para chequeos exista (migración ligera en runtime)
-$pdo->exec("ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS chequeos_seleccionados TEXT DEFAULT NULL");
+try {
+    $pdo->exec("ALTER TABLE expedientes ADD COLUMN chequeos_seleccionados TEXT DEFAULT NULL");
+} catch (Exception $e) {
+    // Ignorar si la columna ya existe
+}
 
 // Procesar actualización
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

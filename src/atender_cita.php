@@ -33,9 +33,23 @@ $stmt->execute();
 $expediente = $stmt->fetch();
 
 // Asegurar campos adicionales
-$pdo->exec("ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS diagnostico TEXT DEFAULT NULL");
-$pdo->exec("ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS tratamiento TEXT DEFAULT NULL");
-$pdo->exec("ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS observaciones TEXT DEFAULT NULL");
+try {
+    $pdo->exec("ALTER TABLE expedientes ADD COLUMN diagnostico TEXT DEFAULT NULL");
+} catch (Exception $e) {
+    // Ignorar si la columna ya existe
+}
+
+try {
+    $pdo->exec("ALTER TABLE expedientes ADD COLUMN tratamiento TEXT DEFAULT NULL");
+} catch (Exception $e) {
+    // Ignorar si la columna ya existe
+}
+
+try {
+    $pdo->exec("ALTER TABLE expedientes ADD COLUMN observaciones TEXT DEFAULT NULL");
+} catch (Exception $e) {
+    // Ignorar si la columna ya existe
+}
 ?>
 
 <!DOCTYPE html>

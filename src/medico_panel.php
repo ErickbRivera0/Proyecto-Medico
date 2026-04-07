@@ -17,6 +17,14 @@ $cita_model = new Cita($pdo);
 $medico_id = $_SESSION['id'];
 $medico = $medico_model->obtener_por_id($medico_id);
 
+if (!$medico) {
+    // Si no se encuentra el médico en la base de datos, cerrar sesión y regresar al login médico.
+    session_unset();
+    session_destroy();
+    header("Location: medico_login.php");
+    exit();
+}
+
 // Obtener citas del día y futuras
 $today = date('Y-m-d');
 $sql = "SELECT c.*, e.nombre as paciente_nombre FROM citas c 
