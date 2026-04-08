@@ -1,0 +1,46 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 911 >>
+stream
+BT
+/F1 12 Tf
+50 760 Td (Paso 1: Crea o usa un repositorio en GitHub con tu proyecto) Tj
+0 -16 Td (Paso 2: Asegurate de tener el archivo Dockerfile en la raiz) Tj
+0 -16 Td (Paso 3: Agrega fly.toml en la raiz con app y puerto 80) Tj
+0 -16 Td (Paso 4: Agrega .github/workflows/fly-deploy.yml para deploy automatico) Tj
+0 -16 Td (Paso 5: Haz push a la rama main en GitHub) Tj
+0 -16 Td (Paso 6: En Fly, crea un token desde flyctl auth token o web) Tj
+0 -16 Td (Paso 7: En GitHub, agrega un Secret FLY_API_TOKEN con ese token) Tj
+0 -16 Td (Paso 8: En GitHub Actions, al hacer push se ejecutara el flujo) Tj
+0 -16 Td (Paso 9: Configura DB_HOST, DB_USER, DB_PASSWORD y DB_NAME en Fly) Tj
+0 -16 Td (Paso 10: Usa una base de datos externa como db4free.net si no tienes MySQL en Fly) Tj
+0 -16 Td (Paso 11: Revisa logs con flyctl logs o GitHub Actions) Tj
+0 -16 Td (Paso 12: Abre la URL de Fly para verificar la app) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001202 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1289
+%%EOF
