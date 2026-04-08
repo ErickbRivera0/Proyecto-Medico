@@ -10,36 +10,18 @@
   },
   "envs": {
     "DB_HOST": {
-      "description": "Database host",
-      "default": "mysql"
+      "description": "Database host from Railway MySQL"
     },
     "DB_USER": {
       "description": "Database user",
       "default": "root"
     },
     "DB_PASSWORD": {
-      "description": "Database password",
-      "default": "root123"
+      "description": "Database password"
     },
     "DB_NAME": {
       "description": "Database name",
       "default": "citas_medicas"
-    },
-    "MYSQL_ROOT_PASSWORD": {
-      "description": "MySQL root password",
-      "default": "root123"
-    },
-    "MYSQL_DATABASE": {
-      "description": "MySQL database",
-      "default": "citas_medicas"
-    },
-    "MYSQL_USER": {
-      "description": "MySQL user",
-      "default": "citas_user"
-    },
-    "MYSQL_PASSWORD": {
-      "description": "MySQL user password",
-      "default": "citas123"
     },
     "APP_ENV": {
       "description": "Application environment",

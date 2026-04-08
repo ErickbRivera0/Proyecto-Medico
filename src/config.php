@@ -1,6 +1,11 @@
 <?php
 // Archivo de configuración principal
-define('BASE_URL', 'http://localhost');
+
+// Detectar BASE_URL automáticamente
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+define('BASE_URL', $protocol . $host);
+
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASSWORD', getenv('DB_PASSWORD') ?: 'root123');
