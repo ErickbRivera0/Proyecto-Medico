@@ -23,11 +23,10 @@ try {
     $pdo->exec("USE `$db_name`");
     
     // Crear tablas si no existen
-    $sql = file_get_contents(__DIR__ . '/../config/init.sql');
+    $sql = file_get_contents(__DIR__ . '/config/init.sql');
     
     // Ejecutar el SQL (dividir por ; y ejecutar línea a línea)
-    $statements = array_filter(array_map('trim', explode(';', $sql)));
-    foreach ($statements as $statement) {
+    $statements = array_filter(array_map('trim', explode(';', $sql)));    foreach ($statements as $statement) {
         if (!empty($statement)) {
             try {
                 $pdo->exec($statement);

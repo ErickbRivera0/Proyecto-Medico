@@ -25,9 +25,10 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 WORKDIR /var/www/html
 
+COPY src/ /var/www/html/
+COPY config/ /var/www/html/config/
 
 RUN chown -R www-data:www-data /var/www/html
-
 
 RUN printf '%s\n' "#!/bin/bash" "set -e" "cd /var/www/html" "if [ -f composer.json ] && [ ! -d vendor ]; then composer install --no-interaction --prefer-dist --optimize-autoloader; fi" "php init-db.php" "exec apache2-foreground" > /usr/local/bin/startup.sh \
     && chmod +x /usr/local/bin/startup.sh
