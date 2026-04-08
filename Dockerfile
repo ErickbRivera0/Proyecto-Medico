@@ -1,6 +1,6 @@
 FROM php:8.1-apache
 
-Limpiar completamente archivos de configuración MPM conflictivas
+
 RUN rm -f /etc/apache2/mods-enabled/mpm_.load && \
     rm -f /etc/apache2/mods-available/mpm_worker. && \
     rm -f /etc/apache2/mods-available/mpm_event.* && \
