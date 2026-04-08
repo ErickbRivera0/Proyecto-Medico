@@ -4,7 +4,7 @@
     "builder": "dockerfile"
   },
   "deploy": {
-    "startCommand": "apache2-foreground",
+    "startCommand": "/usr/local/bin/startup.sh",
     "restartPolicyType": "always",
     "restartPolicyMaxRetries": 5
   },
