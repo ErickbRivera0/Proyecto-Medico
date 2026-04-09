@@ -15,6 +15,9 @@ COPY config/nginx.conf /etc/nginx/sites-available/default
 # Copy supervisor configuration
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Ensure supervisor log directory exists
+RUN mkdir -p /var/log/supervisor
+
 # Set working directory
 WORKDIR /var/www/html
 
