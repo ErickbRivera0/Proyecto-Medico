@@ -21,6 +21,10 @@ RUN mkdir -p /var/log/supervisor
 # Set working directory
 WORKDIR /var/www/html
 
+# Copy application source into the webroot and set ownership
+# Use --chown so files have correct owner without extra RUN layer
+COPY --chown=www-data:www-data src/ /var/www/html/
+
 # Fix permissions
 RUN chown -R www-data:www-data /var/www/html
 
