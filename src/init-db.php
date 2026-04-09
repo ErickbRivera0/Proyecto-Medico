@@ -4,18 +4,22 @@
  * Se ejecuta automáticamente en Railway
  */
 
-$db_host = getenv('DB_HOST') ?: 'localhost';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_password = getenv('DB_PASSWORD') ?: '';
-$db_name = getenv('DB_NAME') ?: 'citas_medicas';
+$db_host = getenv('MYSQLHOST') ?: getenv('DB_HOST') ?: 'localhost';
+$db_port = getenv('MYSQLPORT') ?: getenv('DB_PORT') ?: '3306';
+$db_user = getenv('MYSQLUSER') ?: getenv('DB_USER') ?: 'root';
+$db_password = getenv('MYSQLPASSWORD') ?: getenv('DB_PASSWORD') ?: '';
+$db_name = getenv('MYSQLDATABASE') ?: getenv('DB_NAME') ?: 'citas_medicas';
 
 // Intentar conectar sin la BD primero
 try {
-    $pdo = new PDO("mysql:host=$db_host", $db_user, $db_password, [
+    $pdo = new PDO("mysql:host=$db_host;port=$db_port;charset=utf8mb4", $db_user, $db_password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_TIMEOUT => 10
     ]);
-    
+
+    // Forzar collation uniforme en la sesión
+    $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+
     // Crear la BD si no existe
     $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     
