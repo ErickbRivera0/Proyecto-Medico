@@ -12,6 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy Nginx site configuration
 COPY config/nginx.conf /etc/nginx/sites-available/default
 
+# Copy PHP-FPM configuration
+# clear_env=no is set inside this file so Railway's injected environment
+# variables (MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, etc.) are visible to PHP.
+COPY config/php-fpm.conf /usr/local/etc/php-fpm.conf
+
 # Copy supervisor configuration
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 

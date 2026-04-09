@@ -6,11 +6,20 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    # -----------------------------------------------------------------------
+    # LOCAL DEVELOPMENT — mirrors Railway's automatic MySQL variable injection.
+    # Railway injects MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLPORT, and
+    # MYSQLDATABASE automatically from the linked MySQL service at runtime.
+    # Locally we set them here so config.php works the same way in both envs.
+    # Do NOT use the old DB_HOST / DB_USER / DB_PASSWORD / DB_NAME names —
+    # config.php reads the MYSQL* variables exclusively.
+    # -----------------------------------------------------------------------
     environment:
-      - DB_HOST=mysql
-      - DB_USER=root
-      - DB_PASSWORD=root123
-      - DB_NAME=citas_medicas
+      - MYSQLHOST=mysql
+      - MYSQLPORT=3306
+      - MYSQLUSER=citas_user
+      - MYSQLPASSWORD=citas123
+      - MYSQLDATABASE=citas_medicas
     depends_on:
       - mysql
     volumes:
