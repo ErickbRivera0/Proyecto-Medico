@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS medicos (
     telefono VARCHAR(20),
     email VARCHAR(255),
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de citas
 CREATE TABLE IF NOT EXISTS citas (
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS citas (
     estado ENUM('pendiente', 'confirmada', 'completada', 'cancelada') DEFAULT 'pendiente',
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE SET NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insertar médicos de ejemplo
 INSERT INTO medicos (nombre, especialidad, telefono, email) VALUES
