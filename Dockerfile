@@ -65,6 +65,16 @@ COPY --from=builder /app/vendor /var/www/html/vendor
 
 RUN chown -R www-data:www-data /var/www/html
 
+# Copy migration script into the image
+COPY config/migrate.php /usr/local/bin/migrate.php
+
+# Entrypoint: run the collation migration, then hand off to supervisord.
+# The migration is idempotent — safe to run on every deploy.
+# We use `|| true` so a non-zero exit (e.g. a table already correct) does
+# not prevent the container from starting.
+COPY config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 80
 
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
