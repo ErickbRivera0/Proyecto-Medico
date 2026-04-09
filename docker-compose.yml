@@ -1,5 +1,5 @@
 services:
-  # Servicio web PHP con Apache
+  # Servicio web PHP con Nginx + PHP-FPM
   web:
     build: .
     container_name: citas-medicas-web
@@ -15,7 +15,7 @@ services:
       - mysql
     volumes:
       - ./src:/var/www/html
-      - ./config/apache.conf:/etc/apache2/sites-enabled/000-default.conf
+      - ./config/nginx.conf:/etc/nginx/sites-available/default
     networks:
       - citas-network
     healthcheck:

@@ -1,23 +1,28 @@
-FROM php:8.1-apache
+FROM php:8.1-fpm
 
-# Instalar extensiones necesarias
+# Install PHP extensions
 RUN docker-php-ext-install pdo pdo_mysql mysqli
 
-# Asegurar que solo mpm_prefork esté activo (requerido por mod_php)
-# Deshabilitamos todos los MPMs primero y luego habilitamos únicamente mpm_prefork
-RUN a2dismod mpm_event mpm_worker mpm_async || true \
- && a2enmod mpm_prefork \
- && a2enmod rewrite \
- && apache2ctl configtest
+# Install Nginx and supervisor to manage both processes
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        nginx \
+        supervisor \
+    && rm -rf /var/lib/apt/lists/*
 
-# Establecer el directorio de trabajo
+# Copy Nginx site configuration
+COPY config/nginx.conf /etc/nginx/sites-available/default
+
+# Copy supervisor configuration
+COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Set working directory
 WORKDIR /var/www/html
 
-# Cambiar permisos
+# Fix permissions
 RUN chown -R www-data:www-data /var/www/html
 
-# Exponer puerto
+# Expose port
 EXPOSE 80
 
-# Comando por defecto
-CMD ["apache2-foreground"]
+# Start PHP-FPM and Nginx via supervisor
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
