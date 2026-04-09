@@ -6,11 +6,11 @@ $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https:
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 define('BASE_URL', $protocol . $host);
 
-define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
-define('DB_PORT', getenv('DB_PORT') ?: '3306');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASSWORD', getenv('DB_PASSWORD') ?: 'root123');
-define('DB_NAME', getenv('DB_NAME') ?: 'citas_medicas');
+define('DB_HOST', getenv('MYSQLHOST') ?: '127.0.0.1');
+define('DB_PORT', getenv('MYSQLPORT') ?: '3306');
+define('DB_USER', getenv('MYSQLUSER') ?: 'root');
+define('DB_PASSWORD', getenv('MYSQLPASSWORD') ?: '');
+define('DB_NAME', getenv('MYSQLDATABASE') ?: 'citas_medicas');
 //define('BASE_URL', 'http://localhost/Proyecto-Citas-Medicas-main/src');
 try {
     // Crear conexión PDO (forzando TCP mediante host/port)
