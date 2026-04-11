@@ -18,6 +18,7 @@ if (isset($_SESSION['login_time']) && (time() - $_SESSION['login_time'] > 28800)
 require_once 'config.php';
 $user_email = $_SESSION['email'];
 $user_nombre = $_SESSION['usuario'];
+$acceso_restringido_expediente = isset($_GET['error']) && $_GET['error'] === 'solo_medico_expediente';
 
 // Contar citas activas del usuario
 $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM citas WHERE paciente_email = ? AND fecha >= CURDATE() AND estado != 'cancelada'");
@@ -251,6 +252,18 @@ $total_medicos = $result->fetch()['total'];
     </div>
 
     <div class="container">
+        <?php if ($acceso_restringido_expediente): ?>
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-lock me-2"></i>
+                    Acceso restringido: solo el personal médico puede crear o editar expedientes clínicos.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="row mb-4">
             <div class="col-12">
                 <div class="welcome-banner">

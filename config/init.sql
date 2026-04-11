@@ -71,3 +71,26 @@ ALTER TABLE citas ADD COLUMN expediente_id INT DEFAULT NULL;
 
 -- Añadir columna para almacenar chequeos seleccionados en el expediente (CSV o JSON)
 ALTER TABLE expedientes ADD COLUMN chequeos_seleccionados TEXT DEFAULT NULL;
+
+-- Tabla de consultas clinicas por expediente (historial estructurado)
+CREATE TABLE IF NOT EXISTS expediente_consultas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    expediente_id INT NOT NULL,
+    cita_id INT DEFAULT NULL,
+    medico_id INT DEFAULT NULL,
+    medico_nombre VARCHAR(255) DEFAULT NULL,
+    motivo_consulta TEXT,
+    diagnostico TEXT,
+    tratamiento TEXT,
+    observaciones TEXT,
+    presion_arterial VARCHAR(20) DEFAULT NULL,
+    temperatura VARCHAR(10) DEFAULT NULL,
+    frecuencia_cardiaca VARCHAR(10) DEFAULT NULL,
+    saturacion_oxigeno VARCHAR(10) DEFAULT NULL,
+    fecha_consulta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_expediente_fecha (expediente_id, fecha_consulta),
+    INDEX idx_cita (cita_id),
+    CONSTRAINT fk_consulta_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_consulta_medico FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE SET NULL,
+    CONSTRAINT fk_consulta_cita FOREIGN KEY (cita_id) REFERENCES citas(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

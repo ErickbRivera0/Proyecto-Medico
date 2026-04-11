@@ -7,6 +7,11 @@ if (!isset($_SESSION['usuario'])) {
     exit();
 }
 
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'medico') {
+    header('Location: index.php?error=solo_medico_expediente');
+    exit();
+}
+
 $error = '';
 $success = '';
 

@@ -8,6 +8,12 @@ if (!isset($_SESSION['usuario'])) {
     exit();
 }
 
+// Solo el medico puede gestionar expedientes clinicos
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'medico') {
+    header("Location: index.php?error=solo_medico_expediente");
+    exit();
+}
+
 // Obtener expedientes
 $stmt = $pdo->prepare("SELECT id, paciente_email, nombre, fecha_registro FROM expedientes ORDER BY fecha_registro DESC");
 $stmt->execute();

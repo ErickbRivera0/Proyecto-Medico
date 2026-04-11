@@ -2,6 +2,10 @@
 // Plantilla HTML para generar el PDF del expediente.
 // Usa la variable $exp (registro de la base de datos) cuando se incluye.
 if (!isset($exp)) $exp = [];
+if (!isset($medicoAtencion)) $medicoAtencion = '';
+if (!isset($fechaAtencion)) $fechaAtencion = '';
+if (!isset($ultimaConsulta)) $ultimaConsulta = null;
+if (!isset($consultasRecientes) || !is_array($consultasRecientes)) $consultasRecientes = [];
 // Calcular edad si hay fecha de nacimiento
 $edad = '';
 if (!empty($exp['fecha_nacimiento'])) {
@@ -161,6 +165,68 @@ if (!empty($exp['fecha_nacimiento'])) {
         </div>
       <?php endforeach; ?>
       <div class="checkbox-item"><span class="checkbox"></span> Otro: __________________________</div>
+      </div>
+    </section>
+
+    <section class="section medical-note">
+      <div class="section-title">ATENCION MEDICA REGISTRADA</div>
+      <div class="row">
+        <div class="col-100">
+          <div class="small-row"><div class="label-inline">Medico que atendio</div><div class="line-inline"><?php echo htmlspecialchars($medicoAtencion ?: 'No especificado'); ?></div></div>
+          <div class="small-row"><div class="label-inline">Fecha de atencion</div><div class="line-inline"><?php echo htmlspecialchars($fechaAtencion ?: 'No especificada'); ?></div></div>
+
+          <div class="label">Diagnostico</div>
+          <div class="textblock"><?php echo nl2br(htmlspecialchars($exp['diagnostico'] ?? '')); ?></div>
+
+          <div class="label">Tratamiento</div>
+          <div class="textblock"><?php echo nl2br(htmlspecialchars($exp['tratamiento'] ?? '')); ?></div>
+
+          <div class="label">Observaciones</div>
+          <div class="textblock"><?php echo nl2br(htmlspecialchars($exp['observaciones'] ?? '')); ?></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section medical-note">
+      <div class="section-title">ULTIMA CONSULTA</div>
+      <div class="row">
+        <div class="col-100">
+          <?php if ($ultimaConsulta): ?>
+            <div class="small-row"><div class="label-inline">Motivo</div><div class="line-inline"><?php echo htmlspecialchars($ultimaConsulta['motivo_consulta'] ?? ''); ?></div></div>
+            <div class="small-row"><div class="label-inline">Presion arterial</div><div class="line-inline"><?php echo htmlspecialchars($ultimaConsulta['presion_arterial'] ?? '-'); ?></div></div>
+            <div class="small-row"><div class="label-inline">Temperatura</div><div class="line-inline"><?php echo htmlspecialchars($ultimaConsulta['temperatura'] ?? '-'); ?></div></div>
+            <div class="small-row"><div class="label-inline">Frecuencia cardiaca</div><div class="line-inline"><?php echo htmlspecialchars($ultimaConsulta['frecuencia_cardiaca'] ?? '-'); ?></div></div>
+            <div class="small-row"><div class="label-inline">Saturacion oxigeno</div><div class="line-inline"><?php echo htmlspecialchars($ultimaConsulta['saturacion_oxigeno'] ?? '-'); ?></div></div>
+            <div class="label">Diagnostico de la consulta</div>
+            <div class="textblock"><?php echo nl2br(htmlspecialchars($ultimaConsulta['diagnostico'] ?? '')); ?></div>
+            <div class="label">Tratamiento de la consulta</div>
+            <div class="textblock"><?php echo nl2br(htmlspecialchars($ultimaConsulta['tratamiento'] ?? '')); ?></div>
+            <div class="label">Observaciones de la consulta</div>
+            <div class="textblock"><?php echo nl2br(htmlspecialchars($ultimaConsulta['observaciones'] ?? '')); ?></div>
+          <?php else: ?>
+            <div class="textblock">No hay consultas estructuradas registradas.</div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </section>
+
+    <section class="section medical-note">
+      <div class="section-title">HISTORIAL RECIENTE DE CONSULTAS</div>
+      <div class="row">
+        <div class="col-100">
+          <?php if (count($consultasRecientes) === 0): ?>
+            <div class="textblock">No hay historial reciente.</div>
+          <?php else: ?>
+            <?php foreach ($consultasRecientes as $i => $consulta): ?>
+              <div class="textblock" style="margin-bottom:8px;">
+                <strong><?php echo $i + 1; ?>.</strong>
+                <?php echo date('d/m/Y H:i', strtotime($consulta['fecha_consulta'])); ?> |
+                <?php echo htmlspecialchars($consulta['medico_nombre'] ?: 'Medico no especificado'); ?> |
+                Dx: <?php echo htmlspecialchars($consulta['diagnostico'] ?: 'Sin diagnostico'); ?>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
       </div>
     </section>
 

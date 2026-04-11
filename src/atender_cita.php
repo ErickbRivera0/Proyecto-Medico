@@ -32,6 +32,42 @@ $stmt->bindParam(1, $cita['paciente_email']);
 $stmt->execute();
 $expediente = $stmt->fetch();
 
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS expediente_consultas (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        expediente_id INT NOT NULL,
+        cita_id INT DEFAULT NULL,
+        medico_id INT DEFAULT NULL,
+        medico_nombre VARCHAR(255) DEFAULT NULL,
+        motivo_consulta TEXT,
+        diagnostico TEXT,
+        tratamiento TEXT,
+        observaciones TEXT,
+        presion_arterial VARCHAR(20) DEFAULT NULL,
+        temperatura VARCHAR(10) DEFAULT NULL,
+        frecuencia_cardiaca VARCHAR(10) DEFAULT NULL,
+        saturacion_oxigeno VARCHAR(10) DEFAULT NULL,
+        fecha_consulta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_expediente_fecha (expediente_id, fecha_consulta),
+        INDEX idx_cita (cita_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+} catch (Exception $e) {
+    // Ignorar si la tabla ya existe o no puede crearse en este entorno
+}
+
+$consultas_recientes = [];
+if ($expediente && !empty($expediente['id'])) {
+    $stmtConsultas = $pdo->prepare("SELECT fecha_consulta, medico_nombre, diagnostico, tratamiento,
+                                           presion_arterial, temperatura, frecuencia_cardiaca, saturacion_oxigeno
+                                    FROM expediente_consultas
+                                    WHERE expediente_id = ?
+                                    ORDER BY fecha_consulta DESC
+                                    LIMIT 5");
+    $stmtConsultas->bindParam(1, $expediente['id'], PDO::PARAM_INT);
+    $stmtConsultas->execute();
+    $consultas_recientes = $stmtConsultas->fetchAll();
+}
+
 // Asegurar campos adicionales
 try {
     $pdo->exec("ALTER TABLE expedientes ADD COLUMN diagnostico TEXT DEFAULT NULL");
@@ -103,6 +139,28 @@ try {
                     <p><strong>Tratamiento Anterior:</strong> <?php echo nl2br(htmlspecialchars($expediente['tratamiento'] ?: 'Ninguno')); ?></p>
                     <p><strong>Observaciones Anteriores:</strong> <?php echo nl2br(htmlspecialchars($expediente['observaciones'] ?: 'Ninguna')); ?></p>
                 </div>
+
+                <div class="expediente-info" style="margin-top: 1rem;">
+                    <h3>Consultas Recientes</h3>
+                    <?php if (count($consultas_recientes) === 0): ?>
+                        <p>No hay consultas registradas en historial estructurado.</p>
+                    <?php else: ?>
+                        <?php foreach ($consultas_recientes as $consulta): ?>
+                            <div style="padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:10px;">
+                                <p><strong>Fecha:</strong> <?php echo date('d/m/Y H:i', strtotime($consulta['fecha_consulta'])); ?></p>
+                                <p><strong>Médico:</strong> <?php echo htmlspecialchars($consulta['medico_nombre'] ?: 'No especificado'); ?></p>
+                                <p><strong>Signos vitales:</strong>
+                                    PA <?php echo htmlspecialchars($consulta['presion_arterial'] ?: '-'); ?>,
+                                    Temp <?php echo htmlspecialchars($consulta['temperatura'] ?: '-'); ?>,
+                                    FC <?php echo htmlspecialchars($consulta['frecuencia_cardiaca'] ?: '-'); ?>,
+                                    SpO2 <?php echo htmlspecialchars($consulta['saturacion_oxigeno'] ?: '-'); ?>
+                                </p>
+                                <p><strong>Diagnóstico:</strong> <?php echo nl2br(htmlspecialchars($consulta['diagnostico'] ?: '')); ?></p>
+                                <p><strong>Tratamiento:</strong> <?php echo nl2br(htmlspecialchars($consulta['tratamiento'] ?: '')); ?></p>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
                 <?php else: ?>
                 <div class="alert alert-info">No se encontró expediente para este paciente. Se creará uno nuevo.</div>
                 <?php endif; ?>
@@ -111,6 +169,28 @@ try {
                 <form action="guardar_expediente.php" method="POST">
                     <input type="hidden" name="cita_id" value="<?php echo $cita_id; ?>">
                     <input type="hidden" name="paciente_email" value="<?php echo htmlspecialchars($cita['paciente_email']); ?>">
+
+                    <div class="form-group">
+                        <label for="motivo_consulta">Motivo de consulta:</label>
+                        <textarea id="motivo_consulta" name="motivo_consulta" rows="2"><?php echo htmlspecialchars($cita['motivo']); ?></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="presion_arterial">Presión arterial:</label>
+                        <input type="text" id="presion_arterial" name="presion_arterial" placeholder="Ej. 120/80 mmHg">
+                    </div>
+                    <div class="form-group">
+                        <label for="temperatura">Temperatura:</label>
+                        <input type="text" id="temperatura" name="temperatura" placeholder="Ej. 36.8 °C">
+                    </div>
+                    <div class="form-group">
+                        <label for="frecuencia_cardiaca">Frecuencia cardiaca:</label>
+                        <input type="text" id="frecuencia_cardiaca" name="frecuencia_cardiaca" placeholder="Ej. 76 lpm">
+                    </div>
+                    <div class="form-group">
+                        <label for="saturacion_oxigeno">Saturación de oxígeno:</label>
+                        <input type="text" id="saturacion_oxigeno" name="saturacion_oxigeno" placeholder="Ej. 98%">
+                    </div>
 
                     <div class="form-group">
                         <label for="diagnostico">Diagnóstico:</label>

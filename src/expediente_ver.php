@@ -7,12 +7,40 @@ if (!isset($_SESSION['usuario'])) {
     exit();
 }
 
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'medico') {
+    header('Location: index.php?error=solo_medico_expediente');
+    exit();
+}
+
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header('Location: expedientes.php');
     exit();
 }
 
 $id = (int)$_GET['id'];
+
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS expediente_consultas (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        expediente_id INT NOT NULL,
+        cita_id INT DEFAULT NULL,
+        medico_id INT DEFAULT NULL,
+        medico_nombre VARCHAR(255) DEFAULT NULL,
+        motivo_consulta TEXT,
+        diagnostico TEXT,
+        tratamiento TEXT,
+        observaciones TEXT,
+        presion_arterial VARCHAR(20) DEFAULT NULL,
+        temperatura VARCHAR(10) DEFAULT NULL,
+        frecuencia_cardiaca VARCHAR(10) DEFAULT NULL,
+        saturacion_oxigeno VARCHAR(10) DEFAULT NULL,
+        fecha_consulta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_expediente_fecha (expediente_id, fecha_consulta),
+        INDEX idx_cita (cita_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+} catch (Exception $e) {
+    // Ignorar errores de migracion ligera
+}
 
 // Asegurar que la columna para chequeos exista (migración ligera en runtime)
 try {
@@ -91,6 +119,11 @@ $q->execute();
 $exp = $q->fetch();
 if (!$exp) { header('Location: expedientes.php'); exit(); }
 
+$qConsultas = $pdo->prepare('SELECT * FROM expediente_consultas WHERE expediente_id = ? ORDER BY fecha_consulta DESC LIMIT 10');
+$qConsultas->bindParam(1, $id, PDO::PARAM_INT);
+$qConsultas->execute();
+$consultas = $qConsultas->fetchAll();
+
 // Preparar lista de chequeos y selecciones actuales (para pre-marcar checkboxes)
 $defaultChecks = [
     'Chequeo general', 'Signos vitales', 'Examen de sangre', 'Electrocardiograma',
@@ -147,6 +180,30 @@ $selectedNorm = array_map('mb_strtolower', $selected);
             <ul class="nav-menu"><li><a href="expedientes.php">Volver</a></li></ul>
         </nav>
         <main>
+            <section class="expediente-info" style="margin-bottom:1rem;">
+                <h3>Historial Clínico de Consultas</h3>
+                <?php if (count($consultas) === 0): ?>
+                    <p>No hay consultas registradas todavía.</p>
+                <?php else: ?>
+                    <?php foreach ($consultas as $consulta): ?>
+                        <div style="padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:10px;">
+                            <p><strong>Fecha:</strong> <?php echo date('d/m/Y H:i', strtotime($consulta['fecha_consulta'])); ?></p>
+                            <p><strong>Médico:</strong> <?php echo htmlspecialchars($consulta['medico_nombre'] ?: 'No especificado'); ?></p>
+                            <p><strong>Motivo:</strong> <?php echo nl2br(htmlspecialchars($consulta['motivo_consulta'] ?: '')); ?></p>
+                            <p><strong>Signos vitales:</strong>
+                                PA <?php echo htmlspecialchars($consulta['presion_arterial'] ?: '-'); ?>,
+                                Temp <?php echo htmlspecialchars($consulta['temperatura'] ?: '-'); ?>,
+                                FC <?php echo htmlspecialchars($consulta['frecuencia_cardiaca'] ?: '-'); ?>,
+                                SpO2 <?php echo htmlspecialchars($consulta['saturacion_oxigeno'] ?: '-'); ?>
+                            </p>
+                            <p><strong>Diagnóstico:</strong> <?php echo nl2br(htmlspecialchars($consulta['diagnostico'] ?: '')); ?></p>
+                            <p><strong>Tratamiento:</strong> <?php echo nl2br(htmlspecialchars($consulta['tratamiento'] ?: '')); ?></p>
+                            <p><strong>Observaciones:</strong> <?php echo nl2br(htmlspecialchars($consulta['observaciones'] ?: '')); ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </section>
+
             <form method="POST" action="expediente_ver.php?id=<?php echo $exp['id']; ?>">
                 <div class="form-group"><label>Email</label><input type="email" name="paciente_email" value="<?php echo htmlspecialchars($exp['paciente_email']); ?>" disabled></div>
                 <div class="form-group"><label>Nombre</label><input type="text" name="nombre" value="<?php echo htmlspecialchars($exp['nombre']); ?>"></div>
