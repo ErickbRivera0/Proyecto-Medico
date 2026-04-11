@@ -519,6 +519,228 @@ table tbody tr:hover {
     75% { transform: translateX(5px); }
 }
 
+/* ============================================
+   DASHBOARD CLINICO Y EXPEDIENTES
+   ============================================ */
+.page-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #0284c7 100%);
+    color: #fff;
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 24px;
+}
+
+.page-hero h2,
+.page-hero h3,
+.page-hero p {
+    color: #fff;
+}
+
+.clinical-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.clinical-metric {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(13, 110, 253, 0.08);
+}
+
+.clinical-metric .metric-label {
+    font-size: 0.88rem;
+    color: #64748b;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.clinical-metric .metric-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.clinical-metric .metric-subtitle {
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 0.92rem;
+}
+
+.panel-section {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+}
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.section-heading h3,
+.section-heading h4 {
+    margin: 0;
+    color: #0f172a;
+}
+
+.soft-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e2e8f0;
+    color: #0f172a;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.search-toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.search-toolbar input {
+    min-width: 260px;
+    flex: 1;
+}
+
+.compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+.compact-table thead th {
+    background: #0f172a;
+    color: #fff;
+    padding: 14px 12px;
+    font-size: 0.92rem;
+}
+
+.compact-table tbody td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+}
+
+.compact-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.compact-table tbody tr:hover {
+    background: #eef6ff;
+}
+
+.patient-name {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.patient-meta {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.status-pill.pending { background: #fef3c7; color: #92400e; }
+.status-pill.completed { background: #dcfce7; color: #166534; }
+.status-pill.cancelled { background: #fee2e2; color: #991b1b; }
+
+.action-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.empty-state {
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 18px;
+    padding: 24px;
+    text-align: center;
+    color: #64748b;
+}
+
+.expediente-card-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.expediente-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--shadow-sm);
+}
+
+.expediente-card .expediente-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.expediente-card .expediente-subtitle {
+    color: #64748b;
+    font-size: 0.92rem;
+    margin-bottom: 12px;
+}
+
+.expediente-card .expediente-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.92rem;
+}
+
+.expediente-card .expediente-row:last-child {
+    border-bottom: none;
+}
+
+.expediente-actions {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .page-hero { padding: 22px; border-radius: 18px; }
+    .section-heading { flex-direction: column; align-items: flex-start; }
+    .search-toolbar input { min-width: 100%; }
+}
+
 .shake {
     animation: shake 0.5s ease-in-out;
 }

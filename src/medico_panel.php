@@ -36,6 +36,24 @@ $stmt->bindParam(1, $medico_id);
 $stmt->bindParam(2, $today);
 $stmt->execute();
 $citas = $stmt;
+
+$stmtStats = $pdo->prepare("SELECT
+    SUM(CASE WHEN fecha = CURDATE() AND estado != 'cancelada' THEN 1 ELSE 0 END) AS citas_hoy,
+    SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) AS citas_pendientes,
+    SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) AS citas_completadas,
+    COUNT(*) AS citas_totales
+FROM citas
+WHERE medico_id = ?");
+$stmtStats->bindParam(1, $medico_id);
+$stmtStats->execute();
+$stats = $stmtStats->fetch() ?: ['citas_hoy' => 0, 'citas_pendientes' => 0, 'citas_completadas' => 0, 'citas_totales' => 0];
+
+$stmtUltimos = $pdo->prepare("SELECT id, paciente_email, nombre, fecha_registro
+    FROM expedientes
+    ORDER BY fecha_registro DESC
+    LIMIT 4");
+$stmtUltimos->execute();
+$expedientes_recientes = $stmtUltimos->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -60,16 +78,54 @@ $citas = $stmt;
         </nav>
 
         <main>
-            <section class="dashboard">
-                <h2>Bienvenido, Dr. <?php echo htmlspecialchars($medico['nombre']); ?></h2>
-                <p>Especialidad: <?php echo htmlspecialchars($medico['especialidad']); ?></p>
+            <section class="page-hero">
+                <div class="section-heading" style="margin-bottom:10px;">
+                    <div>
+                        <h2>Panel Médico</h2>
+                        <p>Dr. <?php echo htmlspecialchars($medico['nombre']); ?> · <?php echo htmlspecialchars($medico['especialidad']); ?></p>
+                    </div>
+                    <span class="soft-badge"><i class="fas fa-stethoscope"></i> Atención clínica</span>
+                </div>
+                <p>Gestión diaria de citas, expedientes y atención médica con acceso restringido al personal médico.</p>
+            </section>
 
-                <h3>Mis Citas</h3>
+            <section class="clinical-grid">
+                <div class="clinical-metric">
+                    <div class="metric-label">Citas hoy</div>
+                    <div class="metric-value"><?php echo (int)$stats['citas_hoy']; ?></div>
+                    <div class="metric-subtitle">Programadas para la jornada</div>
+                </div>
+                <div class="clinical-metric">
+                    <div class="metric-label">Pendientes</div>
+                    <div class="metric-value"><?php echo (int)$stats['citas_pendientes']; ?></div>
+                    <div class="metric-subtitle">Por atender</div>
+                </div>
+                <div class="clinical-metric">
+                    <div class="metric-label">Completadas</div>
+                    <div class="metric-value"><?php echo (int)$stats['citas_completadas']; ?></div>
+                    <div class="metric-subtitle">Atenciones cerradas</div>
+                </div>
+                <div class="clinical-metric">
+                    <div class="metric-label">Total citas</div>
+                    <div class="metric-value"><?php echo (int)$stats['citas_totales']; ?></div>
+                    <div class="metric-subtitle">Histórico del médico</div>
+                </div>
+            </section>
+
+            <section class="panel-section">
+                <div class="section-heading">
+                    <div>
+                        <h3>Próximas citas</h3>
+                        <p class="patient-meta">Ordenadas por fecha y hora</p>
+                    </div>
+                    <span class="soft-badge"><i class="fas fa-calendar-day"></i> <?php echo date('d/m/Y'); ?></span>
+                </div>
+
                 <?php if ($citas->rowCount() == 0): ?>
-                    <div class="alert alert-info">No tienes citas programadas.</div>
+                    <div class="empty-state">No tienes citas programadas.</div>
                 <?php else: ?>
                     <div class="table-responsive">
-                        <table>
+                        <table class="compact-table">
                             <thead>
                                 <tr>
                                     <th>Fecha</th>
@@ -83,22 +139,62 @@ $citas = $stmt;
                             <tbody>
                                 <?php while($cita = $citas->fetch()): ?>
                                 <tr>
-                                    <td><?php echo date('d/m/Y', strtotime($cita['fecha'])); ?></td>
-                                    <td><?php echo $cita['hora']; ?></td>
-                                    <td><?php echo htmlspecialchars($cita['paciente_nombre'] ?: $cita['paciente_email']); ?></td>
-                                    <td><?php echo htmlspecialchars($cita['motivo']); ?></td>
-                                    <td><?php echo ucfirst($cita['estado']); ?></td>
                                     <td>
-                                        <?php if ($cita['estado'] != 'completada'): ?>
-                                            <a href="atender_cita.php?id=<?php echo $cita['id']; ?>" class="btn btn-primary btn-small">Atender</a>
-                                        <?php else: ?>
-                                            Completada
-                                        <?php endif; ?>
+                                        <div class="patient-name"><?php echo date('d/m/Y', strtotime($cita['fecha'])); ?></div>
+                                        <div class="patient-meta"><?php echo date('l', strtotime($cita['fecha'])); ?></div>
+                                    </td>
+                                    <td><?php echo substr((string)$cita['hora'], 0, 5); ?></td>
+                                    <td>
+                                        <div class="patient-name"><?php echo htmlspecialchars($cita['paciente_nombre'] ?: $cita['paciente_email']); ?></div>
+                                        <div class="patient-meta"><?php echo htmlspecialchars($cita['paciente_email']); ?></div>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($cita['motivo']); ?></td>
+                                    <td>
+                                        <?php $estadoClass = $cita['estado'] === 'completada' ? 'completed' : ($cita['estado'] === 'cancelada' ? 'cancelled' : 'pending'); ?>
+                                        <span class="status-pill <?php echo $estadoClass; ?>"><?php echo ucfirst($cita['estado']); ?></span>
+                                    </td>
+                                    <td>
+                                        <div class="action-group">
+                                            <?php if ($cita['estado'] != 'completada'): ?>
+                                                <a href="atender_cita.php?id=<?php echo $cita['id']; ?>" class="btn btn-primary btn-small">Atender</a>
+                                            <?php else: ?>
+                                                <span class="status-pill completed">Completada</span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endwhile; ?>
                             </tbody>
                         </table>
+                    </div>
+                <?php endif; ?>
+            </section>
+
+            <section class="panel-section">
+                <div class="section-heading">
+                    <div>
+                        <h3>Expedientes recientes</h3>
+                        <p class="patient-meta">Últimos registros creados en el sistema</p>
+                    </div>
+                    <a href="expedientes.php" class="btn btn-outline btn-small">Ver todos</a>
+                </div>
+
+                <?php if (count($expedientes_recientes) === 0): ?>
+                    <div class="empty-state">Aún no hay expedientes registrados.</div>
+                <?php else: ?>
+                    <div class="expediente-card-list">
+                        <?php foreach ($expedientes_recientes as $expediente): ?>
+                            <article class="expediente-card">
+                                <div class="expediente-title"><?php echo htmlspecialchars($expediente['nombre'] ?: 'Sin nombre'); ?></div>
+                                <div class="expediente-subtitle"><?php echo htmlspecialchars($expediente['paciente_email']); ?></div>
+                                <div class="expediente-row"><span>ID</span><strong>#<?php echo $expediente['id']; ?></strong></div>
+                                <div class="expediente-row"><span>Creado</span><strong><?php echo date('d/m/Y H:i', strtotime($expediente['fecha_registro'])); ?></strong></div>
+                                <div class="expediente-actions">
+                                    <a href="expediente_ver.php?id=<?php echo $expediente['id']; ?>" class="btn btn-secondary btn-small"><i class="fas fa-eye"></i> Ver</a>
+                                    <a href="generar-expediente-pdf.php?id=<?php echo $expediente['id']; ?>" class="btn btn-success btn-small"><i class="fas fa-file-pdf"></i> PDF</a>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </section>
