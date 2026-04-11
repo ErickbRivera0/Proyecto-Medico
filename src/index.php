@@ -675,8 +675,8 @@ $total_medicos = $result->fetch()['total'];
                 <div class="col-md-4 footer-section mb-4">
                     <h5><i class="fas fa-hospital me-2"></i> Contacto</h5>
                     <p><i class="fas fa-map-marker-alt me-2"></i> Tegucigalpa, Honduras</p>
-                    <p><i class="fas fa-phone me-2"></i> +504 9999-9999</p>
-                    <p><i class="fas fa-envelope me-2"></i> contacto@citasmedicas.com</p>
+                    <p><i class="fas fa-phone me-2"></i> +504 9705-3977</p>
+                    <p><i class="fas fa-envelope me-2"></i> bonillariveraeduardo406@gmail.com</p>
                 </div>
 
                 <div class="col-md-4 footer-section mb-4">
