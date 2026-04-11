@@ -15,7 +15,7 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'medico') {
 }
 
 // Obtener expedientes
-$stmt = $pdo->prepare("SELECT id, paciente_email, nombre, fecha_registro FROM expedientes ORDER BY fecha_registro DESC");
+$stmt = $pdo->prepare("SELECT id,  nombre, fecha_registro FROM expedientes ORDER BY fecha_registro DESC");
 $stmt->execute();
 $expedientes = $stmt;
 
@@ -23,7 +23,7 @@ $stmtCount = $pdo->prepare("SELECT COUNT(*) AS total FROM expedientes");
 $stmtCount->execute();
 $totalExpedientes = (int)($stmtCount->fetch()['total'] ?? 0);
 
-$stmtRecent = $pdo->prepare("SELECT id, paciente_email, nombre, fecha_registro FROM expedientes ORDER BY fecha_registro DESC LIMIT 3");
+$stmtRecent = $pdo->prepare("SELECT id,  nombre, fecha_registro FROM expedientes ORDER BY fecha_registro DESC LIMIT 3");
 $stmtRecent->execute();
 $expedientesRecientes = $stmtRecent->fetchAll();
 ?>

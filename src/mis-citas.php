@@ -10,14 +10,43 @@ if (!isset($_SESSION['usuario'])) {
 
 $user_email = $_SESSION['email'];
 
-// Obtener citas del usuario
-$stmt = $pdo->prepare("SELECT c.*, m.nombre as medico_nombre, m.especialidad 
-                        FROM citas c 
-                        JOIN medicos m ON c.medico_id = m.id 
-                        WHERE c.paciente_email = ? 
-                        ORDER BY c.fecha DESC, c.hora DESC");
-$stmt->bindParam(1, $user_email);
-$stmt->execute();
+// Parámetros de filtro
+$filtro_estado = trim($_GET['estado'] ?? '');
+$filtro_medico = trim($_GET['medico'] ?? '');
+$filtro_fecha_desde = trim($_GET['fecha_desde'] ?? '');
+$filtro_fecha_hasta = trim($_GET['fecha_hasta'] ?? '');
+
+// Construir query dinámicamente
+$sql = "SELECT c.*, m.nombre as medico_nombre, m.especialidad 
+        FROM citas c 
+        JOIN medicos m ON c.medico_id = m.id 
+        WHERE c.paciente_email = ?";
+$params = [$user_email];
+
+if (!empty($filtro_estado)) {
+    $sql .= " AND c.estado = ?";
+    $params[] = $filtro_estado;
+}
+
+if (!empty($filtro_medico)) {
+    $sql .= " AND LOWER(m.nombre) LIKE ?";
+    $params[] = '%' . strtolower($filtro_medico) . '%';
+}
+
+if (!empty($filtro_fecha_desde)) {
+    $sql .= " AND c.fecha >= ?";
+    $params[] = $filtro_fecha_desde;
+}
+
+if (!empty($filtro_fecha_hasta)) {
+    $sql .= " AND c.fecha <= ?";
+    $params[] = $filtro_fecha_hasta;
+}
+
+$sql .= " ORDER BY c.fecha DESC, c.hora DESC";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $citas = $stmt;
 ?>
 
@@ -49,10 +78,50 @@ $citas = $stmt;
             <section class="citas-tabla">
                 <h2><i class="fas fa-calendar-alt"></i> Mis Citas Médicas</h2>
                 
+                <!-- Filtros -->
+                <div style="background: white; border-radius: 8px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <form method="GET" action="mis-citas.php" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: flex-end;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #0f172a;"><i class="fas fa-filter"></i> Estado:</label>
+                            <select name="estado" style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px;">
+                                <option value="">Todos</option>
+                                <option value="pendiente" <?php echo $filtro_estado === 'pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                                <option value="confirmada" <?php echo $filtro_estado === 'confirmada' ? 'selected' : ''; ?>>Confirmada</option>
+                                <option value="completada" <?php echo $filtro_estado === 'completada' ? 'selected' : ''; ?>>Completada</option>
+                                <option value="cancelada" <?php echo $filtro_estado === 'cancelada' ? 'selected' : ''; ?>>Cancelada</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #0f172a;"><i class="fas fa-user-md"></i> Médico:</label>
+                            <input type="text" name="medico" placeholder="Buscar médico..." value="<?php echo htmlspecialchars($filtro_medico); ?>" style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #0f172a;"><i class="fas fa-calendar"></i> Desde:</label>
+                            <input type="date" name="fecha_desde" value="<?php echo htmlspecialchars($filtro_fecha_desde); ?>" style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #0f172a;"><i class="fas fa-calendar"></i> Hasta:</label>
+                            <input type="date" name="fecha_hasta" value="<?php echo htmlspecialchars($filtro_fecha_hasta); ?>" style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px;">
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px;">
+                            <button type="submit" style="flex: 1; background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <a href="mis-citas.php" style="background: #e5e7eb; color: #0f172a; padding: 8px 12px; border-radius: 6px; text-decoration: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                <i class="fas fa-redo"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
                 <?php if ($citas->rowCount() == 0): ?>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> No tienes citas registradas. 
-                        <a href="agendar-cita.php">Agenda tu primera cita aquí</a>
+                        <i class="fas fa-info-circle"></i> No tienes citas que coincidan con los filtros. 
+                        <a href="agendar-cita.php">Agenda una nueva cita aquí</a>
                     </div>
                 <?php else: ?>
                     <div class="table-responsive">
@@ -83,9 +152,8 @@ $citas = $stmt;
                                     </td>
                                     <td>
                                         <?php if($cita['estado'] == 'pendiente' && strtotime($cita['fecha']) >= strtotime(date('Y-m-d'))): ?>
-                                            <a href="cancelar-cita.php?id=<?php echo $cita['id']; ?>" 
-                                               class="btn btn-danger btn-small" 
-                                               onclick="return confirm('¿Estás seguro de cancelar esta cita?')">
+                                            <a href="cancelar_cita.php?id=<?php echo $cita['id']; ?>" 
+                                               class="btn btn-danger btn-small">
                                                 <i class="fas fa-times"></i> Cancelar
                                             </a>
                                         <?php endif; ?>

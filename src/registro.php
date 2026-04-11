@@ -1,41 +1,58 @@
 <?php
 session_start();
 require_once 'config.php';
+require_once 'security_helper.php';
 
 $error = "";
 $success = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if ($_SERVER["REQUEST_METHOD"] == "POST") 
     $nombre = trim($_POST['nombre'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
+    $fecha_nacimiento = $_POST['fecha_nacimiento'] ?? '';
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
 
     // Validaciones
     if (empty($nombre) || empty($email) || empty($telefono) || empty($password)) {
         $error = "⚠️ Todos los campos son obligatorios";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    } elseif (!validarEmail($email)) {
         $error = "⚠️ Email no válido";
-    } elseif (strlen($password) < 6) {
-        $error = "⚠️ La contraseña debe tener al menos 6 caracteres";
-    } elseif ($password !== $confirm_password) {
-        $error = "⚠️ Las contraseñas no coinciden";
+    } elseif (!validarTelefono($telefono)) {
+        $error = "⚠️ Teléfono no válido (formato Honduras)";
     } else {
-        // Verificar si el email ya existe
-        $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
-        $stmt->bindParam(1, $email);
-        $stmt->execute();
-        $result = $stmt;
-        
-        if ($result->rowCount() > 0) {
-            $error = "❌ Este email ya está registrado";
+        // Validar contraseña
+        $validacion_pwd = validarContraseña($password);
+        if (!$validacion_pwd['valido']) {
+            $error = "⚠️ Contraseña débil:<br>" . implode("<br>", $validacion_pwd['errores']);
+        } elseif ($password !== $confirm_password) {
+            $error = "⚠️ Las contraseñas no coinciden";
         } else {
-            // Encriptar contraseña
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $rol = 'usuario'; // Por defecto
-            $estado = 'activo';
-            $fecha_registro = date('Y-m-d H:i:s');
+            // Validar edad si se proporciona
+            if (!empty($fecha_nacimiento)) {
+                $validacion_edad = validarEdad($fecha_nacimiento);
+                if (!$validacion_edad['valido']) {
+                    $error = "⚠️ " . $validacion_edad['mensaje'];
+                }
+            }
+        }
+        
+        if (empty($error)) {
+            // Verificar si el email ya existe
+            $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+            $stmt->bindParam(1, $email);
+            $stmt->execute();
+            $result = $stmt;
+            
+            if ($result->rowCount() > 0) {
+                $error = "❌ Este email ya está registrado";
+            } else {
+                // Encriptar contraseña
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                $rol = 'usuario'; // Por defecto
+                $estado = 'activo';
+                $fecha_registro = date('Y-m-d H:i:s');
             
             // Insertar usuario
             $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, email, telefono, password, rol, estado, fecha_registro) VALUES (?, ?, ?, ?, ?, ?, ?)");

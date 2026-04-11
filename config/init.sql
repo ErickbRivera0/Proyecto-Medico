@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS medicos (
     especialidad VARCHAR(100) NOT NULL,
     telefono VARCHAR(20),
     email VARCHAR(255),
+    hora_inicio TIME DEFAULT '08:00',
+    hora_fin TIME DEFAULT '17:00',
+    dias_trabajo VARCHAR(50) DEFAULT 'Lunes,Martes,Miercoles,Jueves,Viernes',
+    activo TINYINT DEFAULT 1,
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -22,8 +26,15 @@ CREATE TABLE IF NOT EXISTS citas (
     hora TIME NOT NULL,
     motivo LONGTEXT,
     estado ENUM('pendiente', 'confirmada', 'completada', 'cancelada') DEFAULT 'pendiente',
+    cancelada_por VARCHAR(50),
+    motivo_cancelacion TEXT,
+    asistencia ENUM('asistio', 'no_asistio', 'sin_confirmar') DEFAULT 'sin_confirmar',
+    email_confirmacion_enviado TINYINT DEFAULT 0,
+    email_recordatorio_enviado TINYINT DEFAULT 0,
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE SET NULL
+    FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE SET NULL,
+    INDEX idx_fecha_estado (fecha, estado),
+    INDEX idx_paciente_email (paciente_email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insertar médicos de ejemplo
@@ -43,8 +54,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
     password VARCHAR(255) NOT NULL,
     rol VARCHAR(50) NOT NULL DEFAULT 'usuario',
     estado VARCHAR(50) NOT NULL DEFAULT 'activo',
+    fecha_ultimo_login DATETIME,
+    intentos_fallidos INT DEFAULT 0,
+    bloqueado_hasta DATETIME,
     fecha_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_email (email)
+    UNIQUE KEY unique_email (email),
+    INDEX idx_rol_estado (rol, estado)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de expedientes (historial clínico del paciente)
@@ -96,4 +111,35 @@ CREATE TABLE IF NOT EXISTS expediente_consultas (
     CONSTRAINT fk_consulta_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE,
     CONSTRAINT fk_consulta_medico FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE SET NULL,
     CONSTRAINT fk_consulta_cita FOREIGN KEY (cita_id) REFERENCES citas(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de calificaciones de médicos
+CREATE TABLE IF NOT EXISTS calificaciones_medicos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    cita_id INT NOT NULL,
+    medico_id INT NOT NULL,
+    paciente_email VARCHAR(255) NOT NULL,
+    calificacion INT DEFAULT 5 COMMENT '1-5 estrellas',
+    comentario TEXT,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_cita_calificacion (cita_id),
+    FOREIGN KEY (cita_id) REFERENCES citas(id) ON DELETE CASCADE,
+    FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE CASCADE,
+    INDEX idx_medico_calificacion (medico_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de registro de emails enviados
+CREATE TABLE IF NOT EXISTS email_notificaciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    tipo VARCHAR(50) NOT NULL COMMENT 'confirmacion,recordatorio,cancelacion',
+    cita_id INT,
+    destinatario VARCHAR(255) NOT NULL,
+    asunto VARCHAR(255) NOT NULL,
+    enviado TINYINT DEFAULT 0,
+    fecha_intento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    error_mensaje TEXT,
+    fecha_exito DATETIME,
+    FOREIGN KEY (cita_id) REFERENCES citas(id) ON DELETE SET NULL,
+    INDEX idx_tipo_cita (tipo, cita_id),
+    INDEX idx_enviado (enviado)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

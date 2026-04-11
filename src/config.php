@@ -29,4 +29,37 @@ try {
     die("❌ Error de conexión con la base de datos. Por favor, intenta más tarde.");
 }
 
+/**
+ * Actualiza automáticamente el estado de las citas:
+ * 1. Pendiente → Confirmada (después de 15 minutos)
+ * 2. Confirmada → Cancelada (si la fecha/hora ya pasó sin marcarse como completada)
+ */
+function actualizarEstadosCitas($pdo) {
+    try {
+        // 1. Confirmar citas pendientes después de 15 minutos
+        $pdo->exec("
+            UPDATE citas 
+            SET estado = 'confirmada'
+            WHERE estado = 'pendiente' 
+            AND fecha_registro < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+        ");
+        
+        // 2. Cancelar citas confirmadas cuya fecha/hora ya pasó
+        $pdo->exec("
+            UPDATE citas 
+            SET estado = 'cancelada'
+            WHERE estado = 'confirmada' 
+            AND CONCAT(fecha, ' ', hora) < NOW()
+        ");
+    } catch (Exception $e) {
+        // Silenciosamente ignorar errores de actualización automática
+        error_log("Error en actualización de citas: " . $e->getMessage());
+    }
+}
+
+// Ejecutar actualización automática en cada carga
+if (isset($pdo)) {
+    actualizarEstadosCitas($pdo);
+}
+
 ?>

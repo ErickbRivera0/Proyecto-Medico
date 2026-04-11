@@ -458,7 +458,7 @@ $coloracionDefault = $detalle['coloracion'] ?? 'Normal';
                 <div class="form-group"><label>Contacto de emergencia</label><input type="text" name="detalle[contacto_emergencia]" value="<?php echo htmlspecialchars($detalle['contacto_emergencia'] ?? ''); ?>"></div>
                 <div class="form-group"><label>Teléfono de emergencia</label><input type="text" name="detalle[telefono_emergencia]" value="<?php echo htmlspecialchars($detalle['telefono_emergencia'] ?? ''); ?>"></div>
                 <div class="form-group"><label>Fecha de consulta</label><input type="date" name="detalle[fecha_consulta]" value="<?php echo htmlspecialchars($fechaConsultaDefault); ?>"></div>
-                <div class="form-group"><label>Médico responsable</label><input type="text" name="detalle[medico_responsable]" value="<?php echo htmlspecialchars($medicoResponsableDefault); ?>"></div>
+                
 
                 <h4>Preclínica / Signos Vitales</h4>
                 <div class="form-group"><label>IMC</label><input type="text" id="imc_input" name="detalle[imc]" value="<?php echo htmlspecialchars($detalle['imc'] ?? $imcBase); ?>" readonly></div>
