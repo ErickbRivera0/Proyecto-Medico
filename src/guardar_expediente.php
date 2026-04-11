@@ -138,7 +138,7 @@ if ($stmt->execute()) {
             // Si no se puede guardar el historial estructurado, no romper el flujo principal
         }
 
-        header("Location: generar-expediente-pdf.php?id=" . (int)$exp['id'] . "&cita_id=" . $cita_id . "&inline=1");
+        header("Location: expediente_ver.php?id=" . (int)$exp['id'] . "&saved=1");
         exit();
     }
 

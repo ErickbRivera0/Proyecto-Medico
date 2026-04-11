@@ -190,6 +190,7 @@ $detalleLabs = $detalle['laboratorio'] ?? [];
 $detalleRx = $detalle['radiografias'] ?? [];
 $detalleUsg = $detalle['ultrasonidos'] ?? [];
 $detalleIndicaciones = $detalle['indicaciones_generales'] ?? [];
+$saved = isset($_GET['saved']) && $_GET['saved'] === '1';
 
 $pesoBase = isset($exp['peso']) ? (float)str_replace(',', '.', preg_replace('/[^0-9,\.]/', '', (string)$exp['peso'])) : 0.0;
 $alturaBaseCm = isset($exp['altura']) ? (float)str_replace(',', '.', preg_replace('/[^0-9,\.]/', '', (string)$exp['altura'])) : 0.0;
@@ -214,6 +215,13 @@ if ($drogasEstado === '' && !empty($detalle['drogas'])) {
     $drogasEstado = stripos((string)$detalle['drogas'], 'no') !== false ? 'No' : 'Si';
 }
 
+$fechaConsultaDefault = $detalle['fecha_consulta'] ?? date('Y-m-d');
+$medicoResponsableDefault = $detalle['medico_responsable'] ?? ($_SESSION['usuario'] ?? '');
+$estadoGeneralDefault = $detalle['estado_general'] ?? 'Bueno';
+$conscienteDefault = $detalle['consciente'] ?? 'Si';
+$hidratacionDefault = $detalle['hidratacion'] ?? 'Adecuada';
+$coloracionDefault = $detalle['coloracion'] ?? 'Normal';
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -223,6 +231,132 @@ if ($drogasEstado === '' && !empty($detalle['drogas'])) {
     <title>Ver Expediente</title>
     <link rel="stylesheet" href="assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .clinical-shell {
+            background: rgba(255,255,255,0.92);
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            padding: 24px;
+            margin-top: 18px;
+            margin-bottom: 32px;
+        }
+
+        .clinical-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #0284c7 100%);
+            color: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 18px;
+        }
+
+        .clinical-header h2,
+        .clinical-header p {
+            color: #fff;
+            margin: 0;
+        }
+
+        .clinical-toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .clinical-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 14px 16px;
+        }
+
+        .summary-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .clinical-section {
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 18px;
+            background: #fff;
+        }
+
+        .clinical-section h3,
+        .clinical-section h4 {
+            margin-bottom: 12px;
+        }
+
+        .checks-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .checks-list label {
+            display: flex !important;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin: 0 !important;
+        }
+
+        .checks-list input[type="checkbox"] {
+            transform: scale(1.08);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            border-radius: 12px;
+            border-color: #cbd5e1;
+        }
+
+        .form-group textarea {
+            min-height: 110px;
+        }
+
+        .save-banner {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .clinical-shell {
+                padding: 16px;
+                border-radius: 18px;
+            }
+
+            .clinical-header {
+                padding: 18px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -231,7 +365,48 @@ if ($drogasEstado === '' && !empty($detalle['drogas'])) {
             <ul class="nav-menu"><li><a href="expedientes.php">Volver</a></li></ul>
         </nav>
         <main>
-            <section class="expediente-info" style="margin-bottom:1rem;">
+            <?php if ($saved): ?>
+                <div class="save-banner"><i class="fas fa-check-circle"></i> Expediente guardado correctamente. Puedes seguir completándolo aquí.</div>
+            <?php endif; ?>
+
+            <section class="clinical-shell">
+                <div class="clinical-header">
+                    <h2>Expediente clínico en línea</h2>
+                    <p>Registro y seguimiento clínico editable por el médico.</p>
+                    <div class="clinical-toolbar">
+                        <a href="medico_panel.php" class="btn btn-outline btn-small"><i class="fas fa-arrow-left"></i> Panel</a>
+                        <a href="generar-expediente-pdf.php?id=<?php echo $exp['id']; ?>" class="btn btn-success btn-small"><i class="fas fa-file-pdf"></i> PDF</a>
+                    </div>
+                </div>
+
+                <div class="clinical-summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-label">Paciente</div>
+                        <div class="summary-value"><?php echo htmlspecialchars($exp['nombre'] ?: 'Sin nombre'); ?></div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Correo</div>
+                        <div class="summary-value"><?php echo htmlspecialchars($exp['paciente_email']); ?></div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">IMC</div>
+                        <div class="summary-value"><?php echo htmlspecialchars($detalle['imc'] ?? $imcBase ?: 'No calculado'); ?></div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Médico responsable</div>
+                        <div class="summary-value"><?php echo htmlspecialchars($medicoResponsableDefault); ?></div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Fecha de consulta</div>
+                        <div class="summary-value"><?php echo htmlspecialchars($fechaConsultaDefault); ?></div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Última actualización</div>
+                        <div class="summary-value"><?php echo date('d/m/Y H:i'); ?></div>
+                    </div>
+                </div>
+
+            <section class="clinical-section" style="margin-bottom:1rem;">
                 <h3>Historial Clínico de Consultas</h3>
                 <?php if (count($consultas) === 0): ?>
                     <p>No hay consultas registradas todavía.</p>
@@ -282,8 +457,8 @@ if ($drogasEstado === '' && !empty($detalle['drogas'])) {
                 <div class="form-group"><label>Ocupación</label><input type="text" name="detalle[ocupacion]" value="<?php echo htmlspecialchars($detalle['ocupacion'] ?? ''); ?>"></div>
                 <div class="form-group"><label>Contacto de emergencia</label><input type="text" name="detalle[contacto_emergencia]" value="<?php echo htmlspecialchars($detalle['contacto_emergencia'] ?? ''); ?>"></div>
                 <div class="form-group"><label>Teléfono de emergencia</label><input type="text" name="detalle[telefono_emergencia]" value="<?php echo htmlspecialchars($detalle['telefono_emergencia'] ?? ''); ?>"></div>
-                <div class="form-group"><label>Fecha de consulta</label><input type="date" name="detalle[fecha_consulta]" value="<?php echo htmlspecialchars($detalle['fecha_consulta'] ?? ''); ?>"></div>
-                <div class="form-group"><label>Médico responsable</label><input type="text" name="detalle[medico_responsable]" value="<?php echo htmlspecialchars($detalle['medico_responsable'] ?? ''); ?>"></div>
+                <div class="form-group"><label>Fecha de consulta</label><input type="date" name="detalle[fecha_consulta]" value="<?php echo htmlspecialchars($fechaConsultaDefault); ?>"></div>
+                <div class="form-group"><label>Médico responsable</label><input type="text" name="detalle[medico_responsable]" value="<?php echo htmlspecialchars($medicoResponsableDefault); ?>"></div>
 
                 <h4>Preclínica / Signos Vitales</h4>
                 <div class="form-group"><label>IMC</label><input type="text" id="imc_input" name="detalle[imc]" value="<?php echo htmlspecialchars($detalle['imc'] ?? $imcBase); ?>" readonly></div>
@@ -370,10 +545,33 @@ if ($drogasEstado === '' && !empty($detalle['drogas'])) {
                 <div class="form-group"><textarea name="detalle[historia_enfermedad_actual]" rows="5"><?php echo htmlspecialchars($detalle['historia_enfermedad_actual'] ?? ''); ?></textarea></div>
 
                 <h4>Examen físico</h4>
-                <div class="form-group"><label>Estado general</label><input type="text" name="detalle[estado_general]" value="<?php echo htmlspecialchars($detalle['estado_general'] ?? ''); ?>" placeholder="Bueno/Regular/Malo"></div>
-                <div class="form-group"><label>Consciente</label><input type="text" name="detalle[consciente]" value="<?php echo htmlspecialchars($detalle['consciente'] ?? ''); ?>" placeholder="Sí/No"></div>
-                <div class="form-group"><label>Hidratación</label><input type="text" name="detalle[hidratacion]" value="<?php echo htmlspecialchars($detalle['hidratacion'] ?? ''); ?>" placeholder="Adecuada/Deshidratado"></div>
-                <div class="form-group"><label>Coloración</label><input type="text" name="detalle[coloracion]" value="<?php echo htmlspecialchars($detalle['coloracion'] ?? ''); ?>" placeholder="Normal/Pálido/Ictérico/Cianótico"></div>
+                <div class="form-group"><label>Estado general</label>
+                    <select name="detalle[estado_general]">
+                        <option value="Bueno" <?php if($estadoGeneralDefault==='Bueno') echo 'selected'; ?>>Bueno</option>
+                        <option value="Regular" <?php if($estadoGeneralDefault==='Regular') echo 'selected'; ?>>Regular</option>
+                        <option value="Malo" <?php if($estadoGeneralDefault==='Malo') echo 'selected'; ?>>Malo</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Consciente</label>
+                    <select name="detalle[consciente]">
+                        <option value="Si" <?php if($conscienteDefault==='Si') echo 'selected'; ?>>Sí</option>
+                        <option value="No" <?php if($conscienteDefault==='No') echo 'selected'; ?>>No</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Hidratación</label>
+                    <select name="detalle[hidratacion]">
+                        <option value="Adecuada" <?php if($hidratacionDefault==='Adecuada') echo 'selected'; ?>>Adecuada</option>
+                        <option value="Deshidratado" <?php if($hidratacionDefault==='Deshidratado') echo 'selected'; ?>>Deshidratado</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Coloración</label>
+                    <select name="detalle[coloracion]">
+                        <option value="Normal" <?php if($coloracionDefault==='Normal') echo 'selected'; ?>>Normal</option>
+                        <option value="Palido" <?php if($coloracionDefault==='Palido') echo 'selected'; ?>>Pálido</option>
+                        <option value="Icterico" <?php if($coloracionDefault==='Icterico') echo 'selected'; ?>>Ictérico</option>
+                        <option value="Cianotico" <?php if($coloracionDefault==='Cianotico') echo 'selected'; ?>>Cianótico</option>
+                    </select>
+                </div>
                 <div class="form-group"><label>Cabeza y cuello</label><textarea name="detalle[cabeza_cuello]" rows="2"><?php echo htmlspecialchars($detalle['cabeza_cuello'] ?? ''); ?></textarea></div>
                 <div class="form-group"><label>Cardiopulmonar</label><textarea name="detalle[cardiopulmonar]" rows="2"><?php echo htmlspecialchars($detalle['cardiopulmonar'] ?? ''); ?></textarea></div>
                 <div class="form-group"><label>Abdomen</label><textarea name="detalle[abdomen]" rows="2"><?php echo htmlspecialchars($detalle['abdomen'] ?? ''); ?></textarea></div>
@@ -449,8 +647,7 @@ if ($drogasEstado === '' && !empty($detalle['drogas'])) {
                 <h4>Firmas</h4>
                 <div class="form-group"><label>Firma médico</label><input type="text" name="detalle[firma_medico]" value="<?php echo htmlspecialchars($detalle['firma_medico'] ?? ''); ?>"></div>
                 <div class="form-group"><label>Sello</label><input type="text" name="detalle[sello_medico]" value="<?php echo htmlspecialchars($detalle['sello_medico'] ?? ''); ?>"></div>
-                <div class="form-group"><label>Firma paciente</label><input type="text" name="detalle[firma_paciente]" value="<?php echo htmlspecialchars($detalle['firma_paciente'] ?? ''); ?>"></div>
-
+                
                 <div class="form-group">
                     <label>Chequeos médicos</label>
                     <div class="checks-list">
@@ -462,9 +659,12 @@ if ($drogasEstado === '' && !empty($detalle['drogas'])) {
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <button class="btn btn-primary" type="submit">Guardar</button>
-                <a class="btn btn-success" href="generar-expediente-pdf.php?id=<?php echo $exp['id']; ?>">Generar PDF</a>
+                <div class="clinical-toolbar" style="margin-top:18px;">
+                    <button class="btn btn-primary" type="submit">Guardar expediente</button>
+                    <a class="btn btn-success" href="generar-expediente-pdf.php?id=<?php echo $exp['id']; ?>">Generar PDF</a>
+                </div>
             </form>
+            </section>
         </main>
     </div>
     <script>
