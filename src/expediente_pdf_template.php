@@ -6,6 +6,51 @@ if (!isset($medicoAtencion)) $medicoAtencion = '';
 if (!isset($fechaAtencion)) $fechaAtencion = '';
 if (!isset($ultimaConsulta)) $ultimaConsulta = null;
 if (!isset($consultasRecientes) || !is_array($consultasRecientes)) $consultasRecientes = [];
+$detalle = [];
+if (!empty($exp['expediente_detalle_json'])) {
+  $tmpDetalle = json_decode($exp['expediente_detalle_json'], true);
+  if (json_last_error() === JSON_ERROR_NONE && is_array($tmpDetalle)) {
+    $detalle = $tmpDetalle;
+  }
+}
+$detalleFam = $detalle['antecedentes_familiares'] ?? [];
+$detallePer = $detalle['antecedentes_personales'] ?? [];
+$detalleLabs = $detalle['laboratorio'] ?? [];
+$detalleRx = $detalle['radiografias'] ?? [];
+$detalleUsg = $detalle['ultrasonidos'] ?? [];
+$detalleIndicaciones = $detalle['indicaciones_generales'] ?? [];
+$checked = static function ($arr, $value) {
+  return in_array($value, is_array($arr) ? $arr : [], true) ? 'X' : '&nbsp;';
+};
+
+$toFloat = static function ($value) {
+  if ($value === null || $value === '') return null;
+  $normalized = str_replace(',', '.', preg_replace('/[^0-9,\.]/', '', (string)$value));
+  return is_numeric($normalized) ? (float)$normalized : null;
+};
+
+$toInt = static function ($value) {
+  if ($value === null || $value === '') return null;
+  $normalized = preg_replace('/[^0-9]/', '', (string)$value);
+  return $normalized !== '' ? (int)$normalized : null;
+};
+
+$tempClinica = $toFloat($detalle['temperatura'] ?? ($ultimaConsulta['temperatura'] ?? null));
+$fcClinica = $toInt($detalle['frecuencia_cardiaca'] ?? ($ultimaConsulta['frecuencia_cardiaca'] ?? null));
+$spo2Clinica = $toInt($detalle['saturacion_o2'] ?? ($ultimaConsulta['saturacion_oxigeno'] ?? null));
+$glucemiaClinica = $toInt($detalle['glucemia_capilar'] ?? null);
+$paTexto = (string)($detalle['presion_arterial'] ?? ($ultimaConsulta['presion_arterial'] ?? ''));
+$paSistolica = null;
+if (preg_match('/(\d{2,3})\s*\/\s*(\d{2,3})/', $paTexto, $mPa)) {
+  $paSistolica = (int)$mPa[1];
+}
+
+$alertasClinicas = [];
+if ($tempClinica !== null && $tempClinica >= 38.0) $alertasClinicas[] = 'Fiebre (>= 38.0 C)';
+if ($spo2Clinica !== null && $spo2Clinica < 92) $alertasClinicas[] = 'Saturacion baja (< 92%)';
+if ($paSistolica !== null && $paSistolica >= 140) $alertasClinicas[] = 'Presion arterial elevada (sistolica >= 140 mmHg)';
+if ($fcClinica !== null && ($fcClinica > 100 || $fcClinica < 50)) $alertasClinicas[] = 'Frecuencia cardiaca fuera de rango (50-100 lpm)';
+if ($glucemiaClinica !== null && $glucemiaClinica >= 200) $alertasClinicas[] = 'Glucemia capilar elevada (>= 200 mg/dl)';
 // Calcular edad si hay fecha de nacimiento
 $edad = '';
 if (!empty($exp['fecha_nacimiento'])) {
@@ -31,6 +76,11 @@ if (!empty($exp['fecha_nacimiento'])) {
       $cssPath = __DIR__ . '/assets/css/expediente-print.css';
       if (file_exists($cssPath)) echo file_get_contents($cssPath);
     ?>
+    .grid-2 { width:100%; }
+    .grid-2 .col { width:49%; display:inline-block; vertical-align:top; }
+    .line-note { border-bottom:1px solid #888; min-height:14px; margin-bottom:6px; }
+    .check-item { display:inline-block; margin-right:10px; margin-bottom:4px; }
+    .check-box { display:inline-block; width:12px; height:12px; border:1px solid #555; text-align:center; line-height:12px; font-size:10px; margin-right:4px; }
   </style>
 </head>
 <body>
@@ -80,6 +130,183 @@ if (!empty($exp['fecha_nacimiento'])) {
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">1. DATOS GENERALES DEL PACIENTE</div>
+      <div class="row">
+        <div class="col-100">
+          <div class="small-row"><div class="label-inline">Nombre completo</div><div class="line-inline"><?php echo htmlspecialchars($exp['nombre'] ?? ''); ?></div></div>
+          <div class="small-row"><div class="label-inline">Identidad</div><div class="line-inline"><?php echo htmlspecialchars($detalle['identidad'] ?? ''); ?></div></div>
+          <div class="small-row"><div class="label-inline">Edad</div><div class="line-inline"><?php echo htmlspecialchars((string)$edad); ?></div></div>
+          <div class="small-row"><div class="label-inline">Sexo</div><div class="line-inline"><span class="check-box"><?php echo ($exp['sexo'] === 'M') ? 'X' : '&nbsp;'; ?></span> M <span class="check-box"><?php echo ($exp['sexo'] === 'F') ? 'X' : '&nbsp;'; ?></span> F</div></div>
+          <div class="small-row"><div class="label-inline">Fecha de nacimiento</div><div class="line-inline"><?php echo htmlspecialchars($exp['fecha_nacimiento'] ?? ''); ?></div></div>
+          <div class="small-row"><div class="label-inline">Teléfono</div><div class="line-inline"><?php echo htmlspecialchars($exp['telefono'] ?? ''); ?></div></div>
+          <div class="small-row"><div class="label-inline">Dirección</div><div class="line-inline"><?php echo htmlspecialchars($exp['direccion'] ?? ''); ?></div></div>
+          <div class="small-row"><div class="label-inline">Estado civil</div><div class="line-inline"><?php echo htmlspecialchars($detalle['estado_civil'] ?? ''); ?></div></div>
+          <div class="small-row"><div class="label-inline">Ocupación</div><div class="line-inline"><?php echo htmlspecialchars($detalle['ocupacion'] ?? ''); ?></div></div>
+          <div class="small-row"><div class="label-inline">Contacto de emergencia</div><div class="line-inline"><?php echo htmlspecialchars($detalle['contacto_emergencia'] ?? ($exp['contacto_nombre'] ?? '')); ?></div></div>
+          <div class="small-row"><div class="label-inline">Teléfono emergencia</div><div class="line-inline"><?php echo htmlspecialchars($detalle['telefono_emergencia'] ?? ($exp['contacto_telefono'] ?? '')); ?></div></div>
+          <div class="small-row"><div class="label-inline">Fecha de consulta</div><div class="line-inline"><?php echo htmlspecialchars($detalle['fecha_consulta'] ?? $fechaAtencion); ?></div></div>
+          <div class="small-row"><div class="label-inline">Médico responsable</div><div class="line-inline"><?php echo htmlspecialchars($detalle['medico_responsable'] ?? $medicoAtencion); ?></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">2. PRECLÍNICA / SIGNOS VITALES</div>
+      <div class="row">
+        <div class="col-100">
+          <div class="small-row"><div class="label-inline">Peso</div><div class="line-inline"><?php echo htmlspecialchars($exp['peso'] ?? ''); ?> kg</div></div>
+          <div class="small-row"><div class="label-inline">Talla</div><div class="line-inline"><?php echo htmlspecialchars($exp['altura'] ?? ''); ?> cm</div></div>
+          <div class="small-row"><div class="label-inline">IMC</div><div class="line-inline"><?php echo htmlspecialchars($detalle['imc'] ?? ''); ?></div></div>
+          <div class="small-row"><div class="label-inline">Temperatura</div><div class="line-inline"><?php echo htmlspecialchars($detalle['temperatura'] ?? ($ultimaConsulta['temperatura'] ?? '')); ?> °C</div></div>
+          <div class="small-row"><div class="label-inline">Presión arterial</div><div class="line-inline"><?php echo htmlspecialchars($detalle['presion_arterial'] ?? ($ultimaConsulta['presion_arterial'] ?? '')); ?></div></div>
+          <div class="small-row"><div class="label-inline">Frecuencia cardiaca</div><div class="line-inline"><?php echo htmlspecialchars($detalle['frecuencia_cardiaca'] ?? ($ultimaConsulta['frecuencia_cardiaca'] ?? '')); ?> lpm</div></div>
+          <div class="small-row"><div class="label-inline">Frecuencia respiratoria</div><div class="line-inline"><?php echo htmlspecialchars($detalle['frecuencia_respiratoria'] ?? ''); ?> rpm</div></div>
+          <div class="small-row"><div class="label-inline">Saturación O2</div><div class="line-inline"><?php echo htmlspecialchars($detalle['saturacion_o2'] ?? ($ultimaConsulta['saturacion_oxigeno'] ?? '')); ?> %</div></div>
+          <div class="small-row"><div class="label-inline">Glucemia capilar</div><div class="line-inline"><?php echo htmlspecialchars($detalle['glucemia_capilar'] ?? ''); ?> mg/dl</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">RIESGO CLÍNICO</div>
+      <?php if (count($alertasClinicas) === 0): ?>
+        <div class="textblock">Sin banderas rojas detectadas con los signos cargados.</div>
+      <?php else: ?>
+        <div class="textblock">
+          <?php foreach ($alertasClinicas as $alerta): ?>
+            <div>- <?php echo htmlspecialchars($alerta); ?></div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </section>
+
+    <section class="section">
+      <div class="section-title">3. ANTECEDENTES PATOLÓGICOS FAMILIARES</div>
+      <div class="checkbox-grid">
+        <?php $famOptionsPdf = ['HTA','Diabetes','Cardiopatias','ACV','Cancer','Asma/EPOC','Enfermedad renal','Epilepsia','Trastornos mentales','Tuberculosis']; ?>
+        <?php foreach ($famOptionsPdf as $opt): ?>
+          <div class="checkbox-item"><span class="checkbox checked"><?php echo $checked($detalleFam, $opt); ?></span> <?php echo htmlspecialchars($opt); ?></div>
+        <?php endforeach; ?>
+        <div class="checkbox-item"><span class="checkbox"></span> Otros: <?php echo htmlspecialchars($detalle['antecedentes_familiares_otros'] ?? ''); ?></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">4. ANTECEDENTES PERSONALES PATOLÓGICOS</div>
+      <div class="checkbox-grid">
+        <?php $perOptionsPdf = ['HTA','Diabetes','Asma','Cardiopatia','Gastritis/ERGE','Enfermedad renal','Enfermedad hepatica']; ?>
+        <?php foreach ($perOptionsPdf as $opt): ?>
+          <div class="checkbox-item"><span class="checkbox checked"><?php echo $checked($detallePer, $opt); ?></span> <?php echo htmlspecialchars($opt); ?></div>
+        <?php endforeach; ?>
+      </div>
+      <div class="small-row"><div class="label-inline">Cirugías previas</div><div class="line-inline"><?php echo htmlspecialchars($detalle['cirugias_previas'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Hospitalizaciones</div><div class="line-inline"><?php echo htmlspecialchars($detalle['hospitalizaciones'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Traumatismos</div><div class="line-inline"><?php echo htmlspecialchars($detalle['traumatismos'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Transfusiones</div><div class="line-inline"><?php echo htmlspecialchars($detalle['transfusiones'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">ITS</div><div class="line-inline"><?php echo htmlspecialchars($detalle['its'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Otros</div><div class="line-inline"><?php echo htmlspecialchars($detalle['antecedentes_personales_otros'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">5. ALERGIAS</div>
+      <div class="small-row"><div class="label-inline">Medicamentos</div><div class="line-inline"><?php echo htmlspecialchars($detalle['alergias_medicamentos'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Alimentos</div><div class="line-inline"><?php echo htmlspecialchars($detalle['alergias_alimentos'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Ambientales</div><div class="line-inline"><?php echo htmlspecialchars($detalle['alergias_ambientales'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Otros</div><div class="line-inline"><?php echo htmlspecialchars($detalle['alergias_otros'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">6. HÁBITOS TÓXICOS</div>
+      <div class="small-row"><div class="label-inline">Tabaco</div><div class="line-inline"><span class="check-box"><?php echo (($detalle['tabaco_estado'] ?? '') === 'No') ? 'X' : '&nbsp;'; ?></span> No <span class="check-box"><?php echo (($detalle['tabaco_estado'] ?? '') === 'Si') ? 'X' : '&nbsp;'; ?></span> Sí | Cantidad: <?php echo htmlspecialchars($detalle['tabaco_cantidad'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Alcohol</div><div class="line-inline"><span class="check-box"><?php echo (($detalle['alcohol_estado'] ?? '') === 'No') ? 'X' : '&nbsp;'; ?></span> No <span class="check-box"><?php echo (($detalle['alcohol_estado'] ?? '') === 'Si') ? 'X' : '&nbsp;'; ?></span> Sí | Frecuencia: <?php echo htmlspecialchars($detalle['alcohol_frecuencia'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Drogas</div><div class="line-inline"><span class="check-box"><?php echo (($detalle['drogas_estado'] ?? '') === 'No') ? 'X' : '&nbsp;'; ?></span> No <span class="check-box"><?php echo (($detalle['drogas_estado'] ?? '') === 'Si') ? 'X' : '&nbsp;'; ?></span> Sí | Tipo: <?php echo htmlspecialchars($detalle['drogas_tipo'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Café / energizantes</div><div class="line-inline"><?php echo htmlspecialchars($detalle['cafe_energizantes'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">7. HISTORIA DE LA ENFERMEDAD ACTUAL</div>
+      <div class="textblock"><?php echo nl2br(htmlspecialchars($detalle['historia_enfermedad_actual'] ?? '')); ?></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">8. EXAMEN FÍSICO</div>
+      <div class="small-row"><div class="label-inline">Estado general</div><div class="line-inline"><?php echo htmlspecialchars($detalle['estado_general'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Consciente</div><div class="line-inline"><?php echo htmlspecialchars($detalle['consciente'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Hidratación</div><div class="line-inline"><?php echo htmlspecialchars($detalle['hidratacion'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Coloración</div><div class="line-inline"><?php echo htmlspecialchars($detalle['coloracion'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Cabeza y cuello</div><div class="line-inline"><?php echo htmlspecialchars($detalle['cabeza_cuello'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Cardiopulmonar</div><div class="line-inline"><?php echo htmlspecialchars($detalle['cardiopulmonar'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Abdomen</div><div class="line-inline"><?php echo htmlspecialchars($detalle['abdomen'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Extremidades</div><div class="line-inline"><?php echo htmlspecialchars($detalle['extremidades'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Neurológico</div><div class="line-inline"><?php echo htmlspecialchars($detalle['neurologico'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Piel y mucosas</div><div class="line-inline"><?php echo htmlspecialchars($detalle['piel_mucosas'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">9. EXÁMENES DE LABORATORIO</div>
+      <?php $labOptionsPdf = ['Hemograma completo','Glucosa en ayunas','HbA1c','Urea','Creatinina','Acido urico','Perfil lipidico completo','AST/TGO','ALT/TGP','Bilirrubinas','Fosfatasa alcalina','Electrolitos (Na, K, Cl)','TSH','T3 / T4','Examen general de orina','Urocultivo','Coproparasitario','Prueba embarazo (b-HCG)','VIH','VDRL/RPR','HBsAg','Anti-HCV','Amilasa/Lipasa','PCR','VSG','Troponinas','Dimero D','Gasometria arterial','Grupo y RH','Tiempo de protrombina (TP/INR)','TPT']; ?>
+      <div class="checkbox-grid">
+        <?php foreach ($labOptionsPdf as $opt): ?>
+          <div class="checkbox-item"><span class="checkbox checked"><?php echo $checked($detalleLabs, $opt); ?></span> <?php echo htmlspecialchars($opt); ?></div>
+        <?php endforeach; ?>
+      </div>
+      <div class="small-row"><div class="label-inline">Otros</div><div class="line-inline"><?php echo htmlspecialchars($detalle['laboratorio_otros'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">10. RADIOGRAFÍAS</div>
+      <?php $rxOptionsPdf = ['Rx Torax','Rx Abdomen','Rx Columna cervical','Rx Columna lumbar','Rx Pelvis','Rx Extremidad superior','Rx Extremidad inferior']; ?>
+      <div class="checkbox-grid">
+        <?php foreach ($rxOptionsPdf as $opt): ?>
+          <div class="checkbox-item"><span class="checkbox checked"><?php echo $checked($detalleRx, $opt); ?></span> <?php echo htmlspecialchars($opt); ?></div>
+        <?php endforeach; ?>
+      </div>
+      <div class="small-row"><div class="label-inline">Otros</div><div class="line-inline"><?php echo htmlspecialchars($detalle['radiografias_otros'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">11. ULTRASONIDOS</div>
+      <?php $usgOptionsPdf = ['USG Abdominal','USG Hepatobiliar','USG Renal y vias urinarias','USG Pelvico','USG Obstetrico','USG Tiroides','USG Mamario','USG Testicular','USG Doppler venoso']; ?>
+      <div class="checkbox-grid">
+        <?php foreach ($usgOptionsPdf as $opt): ?>
+          <div class="checkbox-item"><span class="checkbox checked"><?php echo $checked($detalleUsg, $opt); ?></span> <?php echo htmlspecialchars($opt); ?></div>
+        <?php endforeach; ?>
+      </div>
+      <div class="small-row"><div class="label-inline">Otros</div><div class="line-inline"><?php echo htmlspecialchars($detalle['ultrasonidos_otros'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">12. DIAGNÓSTICO</div>
+      <div class="small-row"><div class="label-inline">Diagnóstico principal</div><div class="line-inline"><?php echo htmlspecialchars($detalle['diagnostico_principal'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Diagnósticos secundarios</div><div class="line-inline"><?php echo htmlspecialchars($detalle['diagnosticos_secundarios'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">CIE-10</div><div class="line-inline"><?php echo htmlspecialchars($detalle['cie10'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">13. TRATAMIENTO Y SEGUIMIENTO</div>
+      <div class="label">Tratamiento indicado</div>
+      <div class="textblock"><?php echo nl2br(htmlspecialchars($detalle['tratamiento_indicado'] ?? '')); ?></div>
+      <div class="label">Indicaciones generales</div>
+      <?php $indOptionsPdf = ['Reposo','Hidratacion','Dieta','Control de signos vitales','Referencia a especialista']; ?>
+      <div class="checkbox-grid">
+        <?php foreach ($indOptionsPdf as $opt): ?>
+          <div class="checkbox-item"><span class="checkbox checked"><?php echo $checked($detalleIndicaciones, $opt); ?></span> <?php echo htmlspecialchars($opt); ?></div>
+        <?php endforeach; ?>
+      </div>
+      <div class="small-row"><div class="label-inline">Próxima cita</div><div class="line-inline"><?php echo htmlspecialchars($detalle['proxima_cita'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Signos de alarma explicados</div><div class="line-inline"><span class="check-box"><?php echo (($detalle['signos_alarma_explicados'] ?? '') === 'Si') ? 'X' : '&nbsp;'; ?></span> Sí <span class="check-box"><?php echo (($detalle['signos_alarma_explicados'] ?? '') === 'No') ? 'X' : '&nbsp;'; ?></span> No</div></div>
+      <div class="small-row"><div class="label-inline">Referido</div><div class="line-inline"><span class="check-box"><?php echo (($detalle['referido'] ?? '') === 'Si') ? 'X' : '&nbsp;'; ?></span> Sí <span class="check-box"><?php echo (($detalle['referido'] ?? '') === 'No') ? 'X' : '&nbsp;'; ?></span> No</div></div>
+      <div class="small-row"><div class="label-inline">A</div><div class="line-inline"><?php echo htmlspecialchars($detalle['referido_a'] ?? ''); ?></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">FIRMA Y SELLO</div>
+      <div class="small-row"><div class="label-inline">Firma médico</div><div class="line-inline"><?php echo htmlspecialchars($detalle['firma_medico'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Sello</div><div class="line-inline"><?php echo htmlspecialchars($detalle['sello_medico'] ?? ''); ?></div></div>
+      <div class="small-row"><div class="label-inline">Firma paciente</div><div class="line-inline"><?php echo htmlspecialchars($detalle['firma_paciente'] ?? ''); ?></div></div>
     </section>
 
     <section class="section clinical-data">

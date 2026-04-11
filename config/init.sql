@@ -72,6 +72,9 @@ ALTER TABLE citas ADD COLUMN expediente_id INT DEFAULT NULL;
 -- Añadir columna para almacenar chequeos seleccionados en el expediente (CSV o JSON)
 ALTER TABLE expedientes ADD COLUMN chequeos_seleccionados TEXT DEFAULT NULL;
 
+-- Columna estructurada para el formato ampliado del expediente clínico
+ALTER TABLE expedientes ADD COLUMN expediente_detalle_json LONGTEXT DEFAULT NULL;
+
 -- Tabla de consultas clinicas por expediente (historial estructurado)
 CREATE TABLE IF NOT EXISTS expediente_consultas (
     id INT PRIMARY KEY AUTO_INCREMENT,

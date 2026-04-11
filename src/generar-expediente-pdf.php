@@ -1,5 +1,16 @@
 <?php
+session_start();
 require_once 'config.php';
+
+if (!isset($_SESSION['usuario'])) {
+    header('Location: login.php');
+    exit();
+}
+
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'medico') {
+    header('Location: index.php?error=solo_medico_expediente');
+    exit();
+}
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header('HTTP/1.1 400 Bad Request');
