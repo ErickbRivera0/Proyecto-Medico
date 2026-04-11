@@ -44,11 +44,9 @@ $expedientesRecientes = $stmtRecent->fetchAll();
                 <h1><i class="fas fa-notes-medical"></i> Expedientes</h1>
             </div>
             <ul class="nav-menu">
-                <li><a href="index.php"><i class="fas fa-home"></i> Inicio</a></li>
-                <li><a href="agendar-cita.php"><i class="fas fa-calendar-plus"></i> Agendar Cita</a></li>
-                <li><a href="mis-citas.php"><i class="fas fa-calendar-check"></i> Mis Citas</a></li>
-                <li><a href="medicos.php"><i class="fas fa-user-md"></i> Médicos</a></li>
+                <li><a href="medico_panel.php"><i class="fas fa-house-medical"></i> Panel médico</a></li>
                 <li><a href="expedientes.php" class="active"><i class="fas fa-notes-medical"></i> Expedientes</a></li>
+                <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a></li>
             </ul>
         </nav>
 
@@ -61,7 +59,7 @@ $expedientesRecientes = $stmtRecent->fetchAll();
                     </div>
                     <span class="soft-badge"><i class="fas fa-folder-medical"></i> <?php echo $totalExpedientes; ?> registros</span>
                 </div>
-                <p>Consulta, edición y PDF centralizados para mantener continuidad clínica.</p>
+                <p>Consulta, edición y PDF centralizados para mantener continuidad clínica desde el área médica.</p>
             </section>
 
             <section class="clinical-grid">
