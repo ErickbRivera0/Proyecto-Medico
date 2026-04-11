@@ -306,7 +306,7 @@ if (!empty($exp['fecha_nacimiento'])) {
       <div class="section-title">FIRMA Y SELLO</div>
       <div class="small-row"><div class="label-inline">Firma médico</div><div class="line-inline"><?php echo htmlspecialchars($detalle['firma_medico'] ?? ''); ?></div></div>
       <div class="small-row"><div class="label-inline">Sello</div><div class="line-inline"><?php echo htmlspecialchars($detalle['sello_medico'] ?? ''); ?></div></div>
-      <div class="small-row"><div class="label-inline">Firma paciente</div><div class="line-inline"><?php echo htmlspecialchars($detalle['firma_paciente'] ?? ''); ?></div></div>
+    
     </section>
 
     <section class="section clinical-data">

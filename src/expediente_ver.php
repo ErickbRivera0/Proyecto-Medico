@@ -450,7 +450,7 @@ $coloracionDefault = $detalle['coloracion'] ?? 'Normal';
                 <div class="form-group"><label>Notas</label><textarea name="notas"><?php echo htmlspecialchars($exp['notas']); ?></textarea></div>
 
                 <hr>
-                <h3>Formato Clínico Completo</h3>
+                <h3>Datos del Paciente</h3>
 
                 <div class="form-group"><label>Identidad</label><input type="text" name="detalle[identidad]" value="<?php echo htmlspecialchars($detalle['identidad'] ?? ''); ?>"></div>
                 <div class="form-group"><label>Estado civil</label><input type="text" name="detalle[estado_civil]" value="<?php echo htmlspecialchars($detalle['estado_civil'] ?? ''); ?>"></div>
@@ -644,9 +644,20 @@ $coloracionDefault = $detalle['coloracion'] ?? 'Normal';
                 </div>
                 <div class="form-group"><label>Referido a</label><input type="text" name="detalle[referido_a]" value="<?php echo htmlspecialchars($detalle['referido_a'] ?? ''); ?>"></div>
 
-                <h4>Firmas</h4>
-                <div class="form-group"><label>Firma médico</label><input type="text" name="detalle[firma_medico]" value="<?php echo htmlspecialchars($detalle['firma_medico'] ?? ''); ?>"></div>
-                <div class="form-group"><label>Sello</label><input type="text" name="detalle[sello_medico]" value="<?php echo htmlspecialchars($detalle['sello_medico'] ?? ''); ?>"></div>
+                <h4>Firmas y Sello</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px;">
+                    <div style="text-align: center;">
+                        <div style="height: 80px; border-bottom: 2px dashed #333; margin-bottom: 10px;"></div>
+                        <p style="margin: 0; font-weight: 600; font-size: 14px;">Firma del Médico</p>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Médico responsable</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="height: 80px; border: 2px dashed #333; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; background: #f9f9f9;">
+                            <span style="color: #999; font-size: 12px;">Sello</span>
+                        </div>
+                        <p style="margin: 0; font-weight: 600; font-size: 14px;">Sello del Médico</p>
+                    </div>
+                </div>
                 
                 <div class="form-group">
                     <label>Chequeos médicos</label>
