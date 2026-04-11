@@ -16,25 +16,25 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['paciente_email'] ?? '');
+    
     $nombre = trim($_POST['nombre'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
-    $fecha_nacimiento = $_POST['fecha_nacimiento'] ?? null;
+    $fecha_nacimiento = !empty(trim($_POST['fecha_nacimiento'] ?? '')) ? trim($_POST['fecha_nacimiento']) : null;
     $sexo = $_POST['sexo'] ?? 'O';
-    $direccion = $_POST['direccion'] ?? null;
-    $alergias = $_POST['alergias'] ?? null;
-    $antecedentes = $_POST['antecedentes'] ?? null;
-    $medicamentos = $_POST['medicamentos_actuales'] ?? null;
-    $peso = $_POST['peso'] ?? null;
-    $altura = $_POST['altura'] ?? null;
-    $notas = $_POST['notas'] ?? null;
+    $direccion = !empty(trim($_POST['direccion'] ?? '')) ? trim($_POST['direccion']) : null;
+    $alergias = !empty(trim($_POST['alergias'] ?? '')) ? trim($_POST['alergias']) : null;
+    $antecedentes = !empty(trim($_POST['antecedentes'] ?? '')) ? trim($_POST['antecedentes']) : null;
+    $medicamentos = !empty(trim($_POST['medicamentos_actuales'] ?? '')) ? trim($_POST['medicamentos_actuales']) : null;
+    $peso = !empty(trim($_POST['peso'] ?? '')) ? (float)trim($_POST['peso']) : null;
+    $altura = !empty(trim($_POST['altura'] ?? '')) ? (float)trim($_POST['altura']) : null;
+    $notas = !empty(trim($_POST['notas'] ?? '')) ? trim($_POST['notas']) : null;
 
-    if (empty($email) || empty($nombre)) {
-        $error = 'Email y nombre son obligatorios';
+    if (empty($nombre)) {
+        $error = 'El nombre es obligatorio ';
     } else {
         // Insertar o actualizar si existe
-        $check = $pdo->prepare('SELECT id FROM expedientes WHERE paciente_email = ? LIMIT 1');
-        $check->bindParam(1, $email);
+        $check = $pdo->prepare('SELECT id FROM expedientes WHERE nombre = ? LIMIT 1');
+        $check->bindParam(1, $nombre);
         $check->execute();
         $res = $check;
 
@@ -57,19 +57,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $up->execute();
             $success = 'Expediente actualizado';
         } else {
-            $ins = $pdo->prepare('INSERT INTO expedientes (paciente_email, nombre, telefono, fecha_nacimiento, sexo, direccion, alergias, antecedentes, medicamentos_actuales, peso, altura, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            $ins->bindParam(1, $email);
-            $ins->bindParam(2, $nombre);
-            $ins->bindParam(3, $telefono);
-            $ins->bindParam(4, $fecha_nacimiento);
-            $ins->bindParam(5, $sexo);
-            $ins->bindParam(6, $direccion);
-            $ins->bindParam(7, $alergias);
-            $ins->bindParam(8, $antecedentes);
-            $ins->bindParam(9, $medicamentos);
-            $ins->bindParam(10, $peso);
-            $ins->bindParam(11, $altura);
-            $ins->bindParam(12, $notas);
+            $ins = $pdo->prepare('INSERT INTO expedientes (nombre, telefono, fecha_nacimiento, sexo, direccion, alergias, antecedentes, medicamentos_actuales, peso, altura, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $ins->bindParam(1, $nombre);
+            $ins->bindParam(2, $telefono);
+            $ins->bindParam(3, $fecha_nacimiento);
+            $ins->bindParam(4, $sexo);
+            $ins->bindParam(5, $direccion);
+            $ins->bindParam(6, $alergias);
+            $ins->bindParam(7, $antecedentes);
+            $ins->bindParam(8, $medicamentos);
+            $ins->bindParam(9, $peso);
+            $ins->bindParam(10, $altura);
+            $ins->bindParam(11, $notas);
             $ins->execute();
             $success = 'Expediente creado';
         }
@@ -100,10 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <main>
             <?php if ($error): ?><div class="alert alert-danger"><?php echo $error; ?></div><?php endif; ?>
             <form method="POST" action="nuevo-expediente.php">
-                <div class="form-group">
-                    <label>Email (paciente)</label>
-                    <input type="email" name="paciente_email" required>
-                </div>
+                
                 <div class="form-group">
                     <label>Nombre</label>
                     <input type="text" name="nombre" required>
