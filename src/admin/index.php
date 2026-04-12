@@ -37,184 +37,252 @@ $proximas_citas = $pdo->query("
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .admin-sidebar {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            min-height: 100vh;
-            padding: 20px 0;
+        :root {
+            --ink: #0f172a;
+            --blue: #1d4ed8;
+            --cyan: #0ea5e9;
+            --surface: rgba(255, 255, 255, 0.9);
+            --border: rgba(226, 232, 240, 0.95);
+            --muted: #64748b;
         }
-        
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body.admin-page {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(29, 78, 216, 0.10), transparent 28%),
+                radial-gradient(circle at top right, rgba(14, 165, 233, 0.10), transparent 24%),
+                linear-gradient(180deg, #f8fbff 0%, #edf4ff 100%);
+            color: var(--ink);
+        }
+
+        .admin-sidebar {
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 58%, #0ea5e9 100%);
+            min-height: 100vh;
+            padding: 18px 0;
+            box-shadow: 16px 0 40px rgba(15, 23, 42, 0.12);
+        }
+
         .admin-sidebar .logo {
             text-align: center;
-            padding: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 20px;
+            padding: 18px 20px 22px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
         }
-        
-        .admin-sidebar .logo h2 {
-            color: white;
-            margin: 0;
-            font-size: 1.5rem;
-        }
-        
+
+        .admin-sidebar .logo h2,
         .admin-sidebar .logo p {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.85rem;
-            margin: 5px 0 0;
+            margin: 0;
+            color: #fff;
         }
-        
+
+        .admin-sidebar .logo h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .admin-sidebar .logo p {
+            margin-top: 6px;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.85rem;
+        }
+
         .admin-menu {
             list-style: none;
-            padding: 0;
+            padding: 0 10px;
             margin: 0;
         }
-        
+
         .admin-menu li {
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
-        
+
         .admin-menu a {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 20px;
-            color: rgba(255,255,255,0.8);
+            padding: 12px 16px;
+            color: rgba(255,255,255,0.82);
             text-decoration: none;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
+            border-radius: 16px;
+            transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
         }
-        
+
         .admin-menu a:hover,
         .admin-menu a.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border-left-color: #3498db;
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            transform: translateX(2px);
         }
-        
+
         .admin-menu a i {
             width: 20px;
-            font-size: 1.1rem;
+            text-align: center;
+            font-size: 1rem;
         }
-        
+
         .admin-content {
-            padding: 20px 30px;
-            background: #f5f6fa;
+            padding: 28px;
+            background: transparent;
             min-height: 100vh;
         }
-        
+
         .admin-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e1e8ed;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 18px 22px;
+            background: rgba(255,255,255,0.76);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
         }
-        
+
         .admin-header h1 {
             margin: 0;
-            font-size: 1.8rem;
-            color: #2c3e50;
+            font-size: 1.7rem;
+            color: var(--ink);
+            letter-spacing: -0.03em;
         }
-        
+
         .user-info {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
+            padding: 10px 14px;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 999px;
+            color: #1d4ed8;
+            font-weight: 700;
         }
-        
-        .user-info span {
-            font-weight: 500;
-            color: #2c3e50;
-        }
-        
+
         .stat-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
-        
+
         .stat-card-admin {
-            background: white;
-            border-radius: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        
+
         .stat-card-admin:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 34px rgba(29, 78, 216, 0.12);
         }
-        
+
         .stat-info h3 {
             margin: 0;
-            font-size: 0.9rem;
-            color: #7f8c8d;
+            font-size: 0.86rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        
+
         .stat-number {
             font-size: 2rem;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 5px 0 0;
+            font-weight: 800;
+            color: var(--ink);
+            margin: 6px 0 0;
         }
-        
+
         .stat-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
+            box-shadow: 0 12px 24px rgba(29, 78, 216, 0.22);
         }
-        
+
         .recent-table {
-            background: white;
-            border-radius: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
         }
-        
+
         .recent-table h3 {
-            margin: 0 0 20px;
-            color: #2c3e50;
+            margin: 0 0 16px;
+            color: var(--ink);
         }
-        
+
         .table-responsive {
             overflow-x: auto;
         }
-        
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
+
+        table.table {
+            width: 100%;
+            margin-bottom: 0;
+            border-collapse: collapse;
         }
-        
-        .badge-pendiente { background: #fff3cd; color: #856404; }
-        .badge-confirmada { background: #d4edda; color: #155724; }
-        .badge-completada { background: #d1ecf1; color: #0c5460; }
-        .badge-cancelada { background: #f8d7da; color: #721c24; }
-        
+
+        table.table thead {
+            background: #eff6ff;
+        }
+
+        table.table th,
+        table.table td {
+            padding: 14px 12px;
+            border-color: #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+
+        .badge-pendiente { background: #fef3c7; color: #92400e; }
+        .badge-confirmada { background: #dbeafe; color: #1d4ed8; }
+        .badge-completada { background: #dcfce7; color: #166534; }
+        .badge-cancelada { background: #fee2e2; color: #991b1b; }
+
         @media (max-width: 768px) {
             .admin-sidebar {
                 min-height: auto;
             }
+
             .admin-content {
-                padding: 20px;
+                padding: 16px;
+            }
+
+            .admin-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
 </head>
-<body>
+<body class="admin-page">
     <div class="container-fluid" style="display: flex; flex-wrap: wrap;">
         <!-- Sidebar -->
         <div class="admin-sidebar" style="width: 260px;">
