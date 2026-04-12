@@ -55,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso - Sistema de Citas Médicas</title>
+    <title>Acceso - Historias Clínicas</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -559,8 +559,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
                 <div class="hero-copy">
-                    <h1>Accede a tu cuenta con una interfaz más clara, moderna y rápida.</h1>
-                    <p>Consulta tus citas, administra tu información y entra al panel que te corresponde con una experiencia alineada al inicio y al panel médico.</p>
+                    <h1>Accede a tu cuenta</h1>
+                    <p>Consulta tus citas, administra tu información.</p>
 
                     <div class="hero-badges">
                         <span class="hero-badge"><i class="fas fa-user"></i> Pacientes</span>
@@ -636,7 +636,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <input type="checkbox" id="rememberMe">
                             <span>Recordarme</span>
                         </label>
-                        <span class="helper-link" aria-hidden="true">Acceso directo al sistema</span>
+                        <span class="helper-link" aria-hidden="true">Olvidaste tu Contraseña</span>
                     </div>
 
                     <button type="submit" class="btn-login" id="submitBtn">
