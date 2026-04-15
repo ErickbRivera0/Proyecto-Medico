@@ -88,6 +88,9 @@ try {
 $medico_model = new Medico($pdo);
 
 $error = "";
+$mensaje = isset($_GET['reset']) && $_GET['reset'] === '1'
+    ? 'Contrasena actualizada correctamente. Inicia sesion con tu nueva clave.'
+    : '';
 $email = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -296,6 +299,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <p>Accede a tu panel de control</p>
             </div>
             <div class="login-body">
+                <?php if ($mensaje): ?>
+                    <div class="alert" style="background: #ecfdf3; color: #0f5132; border: 1px solid #b7f0cc;"><?php echo htmlspecialchars($mensaje); ?></div>
+                <?php endif; ?>
                 <?php if ($error): ?>
                     <div class="alert alert-error"><?php echo $error; ?></div>
                 <?php endif; ?>
@@ -315,6 +321,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                     </div>
                     <button type="submit" class="btn-login">Iniciar Sesión</button>
+                    <div style="margin-top: 12px; text-align: right;">
+                        <a href="recuperar_password.php?tipo=medico" style="color: #667eea; text-decoration: none; font-weight: 500;">Recuperar contraseña</a>
+                    </div>
                 </form>
             </div>
             <div class="login-footer">
