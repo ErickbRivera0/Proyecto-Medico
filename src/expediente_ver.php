@@ -2,6 +2,12 @@
 session_start();
 require_once 'config.php';
 
+if (!function_exists('e')) {
+    function e($value): string {
+        return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
+    }
+}
+
 if (!isset($_SESSION['usuario'])) {
     header('Location: login.php');
     exit();
@@ -382,23 +388,23 @@ $coloracionDefault = $detalle['coloracion'] ?? 'Normal';
                 <div class="clinical-summary-grid">
                     <div class="summary-card">
                         <div class="summary-label">Paciente</div>
-                        <div class="summary-value"><?php echo htmlspecialchars($exp['nombre'] ?: 'Sin nombre'); ?></div>
+                        <div class="summary-value"><?php echo e($exp['nombre'] ?: 'Sin nombre'); ?></div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Correo</div>
-                        <div class="summary-value"><?php echo htmlspecialchars($exp['paciente_email']); ?></div>
+                        <div class="summary-value"><?php echo e($exp['paciente_email']); ?></div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">IMC</div>
-                        <div class="summary-value"><?php echo htmlspecialchars($detalle['imc'] ?? $imcBase ?: 'No calculado'); ?></div>
+                        <div class="summary-value"><?php echo e($detalle['imc'] ?? $imcBase ?: 'No calculado'); ?></div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Médico responsable</div>
-                        <div class="summary-value"><?php echo htmlspecialchars($medicoResponsableDefault); ?></div>
+                        <div class="summary-value"><?php echo e($medicoResponsableDefault); ?></div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Fecha de consulta</div>
-                        <div class="summary-value"><?php echo htmlspecialchars($fechaConsultaDefault); ?></div>
+                        <div class="summary-value"><?php echo e($fechaConsultaDefault); ?></div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Última actualización</div>
@@ -431,10 +437,10 @@ $coloracionDefault = $detalle['coloracion'] ?? 'Normal';
             </section>
 
             <form method="POST" action="expediente_ver.php?id=<?php echo $exp['id']; ?>">
-                <div class="form-group"><label>Email</label><input type="email" name="paciente_email" value="<?php echo htmlspecialchars($exp['paciente_email']); ?>" disabled></div>
-                <div class="form-group"><label>Nombre</label><input type="text" name="nombre" value="<?php echo htmlspecialchars($exp['nombre']); ?>"></div>
-                <div class="form-group"><label>Teléfono</label><input type="text" name="telefono" value="<?php echo htmlspecialchars($exp['telefono']); ?>"></div>
-                <div class="form-group"><label>Fecha Nacimiento</label><input type="date" name="fecha_nacimiento" value="<?php echo htmlspecialchars($exp['fecha_nacimiento']); ?>"></div>
+                <div class="form-group"><label>Email</label><input type="email" name="paciente_email" value="<?php echo e($exp['paciente_email']); ?>" disabled></div>
+                <div class="form-group"><label>Nombre</label><input type="text" name="nombre" value="<?php echo e($exp['nombre']); ?>"></div>
+                <div class="form-group"><label>Teléfono</label><input type="text" name="telefono" value="<?php echo e($exp['telefono']); ?>"></div>
+                <div class="form-group"><label>Fecha Nacimiento</label><input type="date" name="fecha_nacimiento" value="<?php echo e($exp['fecha_nacimiento']); ?>"></div>
                 <div class="form-group"><label>Sexo</label>
                     <select name="sexo">
                         <option value="O" <?php if($exp['sexo']=='O') echo 'selected'; ?>>Otro</option>
@@ -442,12 +448,12 @@ $coloracionDefault = $detalle['coloracion'] ?? 'Normal';
                         <option value="F" <?php if($exp['sexo']=='F') echo 'selected'; ?>>Femenino</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Alergias</label><textarea name="alergias"><?php echo htmlspecialchars($exp['alergias']); ?></textarea></div>
-                <div class="form-group"><label>Antecedentes</label><textarea name="antecedentes"><?php echo htmlspecialchars($exp['antecedentes']); ?></textarea></div>
-                <div class="form-group"><label>Medicamentos</label><textarea name="medicamentos_actuales"><?php echo htmlspecialchars($exp['medicamentos_actuales']); ?></textarea></div>
-                <div class="form-group"><label>Peso (kg)</label><input type="text" id="peso_input" name="peso" value="<?php echo htmlspecialchars($exp['peso']); ?>" placeholder="Ej. 72.5"></div>
-                <div class="form-group"><label>Altura (cm)</label><input type="text" id="altura_input" name="altura" value="<?php echo htmlspecialchars($exp['altura']); ?>" placeholder="Ej. 168"></div>
-                <div class="form-group"><label>Notas</label><textarea name="notas"><?php echo htmlspecialchars($exp['notas']); ?></textarea></div>
+                <div class="form-group"><label>Alergias</label><textarea name="alergias"><?php echo e($exp['alergias']); ?></textarea></div>
+                <div class="form-group"><label>Antecedentes</label><textarea name="antecedentes"><?php echo e($exp['antecedentes']); ?></textarea></div>
+                <div class="form-group"><label>Medicamentos</label><textarea name="medicamentos_actuales"><?php echo e($exp['medicamentos_actuales']); ?></textarea></div>
+                <div class="form-group"><label>Peso (kg)</label><input type="text" id="peso_input" name="peso" value="<?php echo e($exp['peso']); ?>" placeholder="Ej. 72.5"></div>
+                <div class="form-group"><label>Altura (cm)</label><input type="text" id="altura_input" name="altura" value="<?php echo e($exp['altura']); ?>" placeholder="Ej. 168"></div>
+                <div class="form-group"><label>Notas</label><textarea name="notas"><?php echo e($exp['notas']); ?></textarea></div>
 
                 <hr>
                 <h3>Datos del Paciente</h3>
