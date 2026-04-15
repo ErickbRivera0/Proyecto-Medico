@@ -17,24 +17,68 @@ try {
 }
 
 try {
-    // Crear o actualizar médico de prueba
+    // Crear médico de prueba solo si no existe; evita duplicados en cada carga del login
     $nombreMedico = 'Dr. Carlos Gonzalez';
     $especialidadMedico = 'Cardiologia';
     $telefonoMedico = '504-2234-5678';
     $emailMedico = 'carlos@clinica.com';
     $hash = password_hash('123456', PASSWORD_DEFAULT);
 
-    // Usar INSERT ... ON DUPLICATE KEY UPDATE para simplificar
-    $stmt = $pdo->prepare("INSERT INTO medicos (nombre, especialidad, telefono, email, password)
-                          VALUES (?, ?, ?, ?, ?)
-                          ON DUPLICATE KEY UPDATE
-                          password = VALUES(password)");
-    $stmt->bindParam(1, $nombreMedico);
-    $stmt->bindParam(2, $especialidadMedico);
-    $stmt->bindParam(3, $telefonoMedico);
-    $stmt->bindParam(4, $emailMedico);
-    $stmt->bindParam(5, $hash);
-    $stmt->execute();
+    $check = $pdo->prepare("SELECT id, password FROM medicos WHERE email = ? ORDER BY id ASC");
+    $check->bindParam(1, $emailMedico);
+    $check->execute();
+    $medicosExistentes = $check->fetchAll(PDO::FETCH_ASSOC);
+    $medicoExistente = $medicosExistentes[0] ?? null;
+
+    if (!$medicoExistente) {
+        $stmt = $pdo->prepare("INSERT INTO medicos (nombre, especialidad, telefono, email, password)
+                              VALUES (?, ?, ?, ?, ?)");
+        $stmt->bindParam(1, $nombreMedico);
+        $stmt->bindParam(2, $especialidadMedico);
+        $stmt->bindParam(3, $telefonoMedico);
+        $stmt->bindParam(4, $emailMedico);
+        $stmt->bindParam(5, $hash);
+        $stmt->execute();
+    } elseif (empty($medicoExistente['password'])) {
+        // Si el registro existe sin password, establecer una para no romper el acceso
+        $upd = $pdo->prepare("UPDATE medicos SET password = ? WHERE id = ?");
+        $upd->bindParam(1, $hash);
+        $upd->bindParam(2, $medicoExistente['id'], PDO::PARAM_INT);
+        $upd->execute();
+    }
+
+    // Limpieza dirigida de duplicados del médico de prueba
+    if (count($medicosExistentes) > 1) {
+        $idPrincipal = (int)$medicosExistentes[0]['id'];
+        $idsDuplicados = [];
+        for ($i = 1; $i < count($medicosExistentes); $i++) {
+            $idsDuplicados[] = (int)$medicosExistentes[$i]['id'];
+        }
+
+        foreach ($idsDuplicados as $idDuplicado) {
+            try {
+                $qCitas = $pdo->prepare("UPDATE citas SET medico_id = ? WHERE medico_id = ?");
+                $qCitas->bindParam(1, $idPrincipal, PDO::PARAM_INT);
+                $qCitas->bindParam(2, $idDuplicado, PDO::PARAM_INT);
+                $qCitas->execute();
+            } catch (Exception $e) {
+                // Ignorar si la tabla aún no existe o no aplica
+            }
+
+            try {
+                $qConsultas = $pdo->prepare("UPDATE expediente_consultas SET medico_id = ? WHERE medico_id = ?");
+                $qConsultas->bindParam(1, $idPrincipal, PDO::PARAM_INT);
+                $qConsultas->bindParam(2, $idDuplicado, PDO::PARAM_INT);
+                $qConsultas->execute();
+            } catch (Exception $e) {
+                // Ignorar si la tabla aún no existe o no aplica
+            }
+
+            $qDelete = $pdo->prepare("DELETE FROM medicos WHERE id = ?");
+            $qDelete->bindParam(1, $idDuplicado, PDO::PARAM_INT);
+            $qDelete->execute();
+        }
+    }
 
 } catch (Exception $e) {
     // Log del error pero continuar

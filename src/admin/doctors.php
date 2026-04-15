@@ -31,18 +31,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $password = trim($_POST['password']);
             
             if (!empty($nombre) && !empty($especialidad) && !empty($telefono) && !empty($email) && !empty($password)) {
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO medicos (nombre, especialidad, telefono, email, password) VALUES (?, ?, ?, ?, ?)");
-                $stmt->bindParam(1, $nombre);
-                $stmt->bindParam(2, $especialidad);
-                $stmt->bindParam(3, $telefono);
-                $stmt->bindParam(4, $email);
-                $stmt->bindParam(5, $hashed_password);
-                
-                if ($stmt->execute()) {
-                    $mensaje = "✅ Médico agregado exitosamente";
+                $check = $pdo->prepare("SELECT id FROM medicos WHERE email = ? LIMIT 1");
+                $check->bindParam(1, $email);
+                $check->execute();
+
+                if ($check->fetch()) {
+                    $error = "⚠️ Ya existe un médico con ese correo";
                 } else {
-                    $error = "❌ Error al agregar médico";
+                    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                    $stmt = $pdo->prepare("INSERT INTO medicos (nombre, especialidad, telefono, email, password) VALUES (?, ?, ?, ?, ?)");
+                    $stmt->bindParam(1, $nombre);
+                    $stmt->bindParam(2, $especialidad);
+                    $stmt->bindParam(3, $telefono);
+                    $stmt->bindParam(4, $email);
+                    $stmt->bindParam(5, $hashed_password);
+                    
+                    if ($stmt->execute()) {
+                        $mensaje = "✅ Médico agregado exitosamente";
+                    } else {
+                        $error = "❌ Error al agregar médico";
+                    }
                 }
             } else {
                 $error = "⚠️ Todos los campos son obligatorios, incluida la contraseña";
@@ -55,8 +63,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $telefono = trim($_POST['telefono']);
             $email = trim($_POST['email']);
             $password = trim($_POST['password']);
-            
-            if (!empty($password)) {
+
+            $check = $pdo->prepare("SELECT id FROM medicos WHERE email = ? AND id <> ? LIMIT 1");
+            $check->bindParam(1, $email);
+            $check->bindParam(2, $id, PDO::PARAM_INT);
+            $check->execute();
+
+            if ($check->fetch()) {
+                $error = "⚠️ Ya existe otro médico con ese correo";
+            } elseif (!empty($password)) {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare("UPDATE medicos SET nombre=?, especialidad=?, telefono=?, email=?, password=? WHERE id=?");
                 $stmt->bindParam(1, $nombre);
@@ -74,10 +89,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->bindParam(5, $id, PDO::PARAM_INT);
             }
             
-            if ($stmt->execute()) {
-                $mensaje = "✅ Médico actualizado exitosamente";
-            } else {
-                $error = "❌ Error al actualizar médico";
+            if (empty($error)) {
+                if ($stmt->execute()) {
+                    $mensaje = "✅ Médico actualizado exitosamente";
+                } else {
+                    $error = "❌ Error al actualizar médico";
+                }
             }
         }
         elseif ($action == 'delete') {
@@ -89,6 +106,74 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $mensaje = "✅ Médico eliminado exitosamente";
             } else {
                 $error = "❌ Error al eliminar médico";
+            }
+        }
+        elseif ($action == 'cleanup_duplicates') {
+            try {
+                $sqlDup = "SELECT LOWER(TRIM(email)) AS email_norm, COUNT(*) AS total
+                           FROM medicos
+                           WHERE email IS NOT NULL AND TRIM(email) <> ''
+                           GROUP BY LOWER(TRIM(email))
+                           HAVING COUNT(*) > 1";
+                $dupStmt = $pdo->query($sqlDup);
+                $dupGroups = $dupStmt ? $dupStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+                if (empty($dupGroups)) {
+                    $mensaje = "ℹ️ No se encontraron médicos duplicados por correo";
+                } else {
+                    $totalEliminados = 0;
+
+                    foreach ($dupGroups as $group) {
+                        $emailNorm = $group['email_norm'];
+                        $rowsStmt = $pdo->prepare("SELECT id FROM medicos WHERE LOWER(TRIM(email)) = ? ORDER BY id ASC");
+                        $rowsStmt->bindParam(1, $emailNorm);
+                        $rowsStmt->execute();
+                        $rows = $rowsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                        if (count($rows) <= 1) {
+                            continue;
+                        }
+
+                        $idPrincipal = (int)$rows[0]['id'];
+
+                        for ($i = 1; $i < count($rows); $i++) {
+                            $idDuplicado = (int)$rows[$i]['id'];
+
+                            try {
+                                $upCitas = $pdo->prepare("UPDATE citas SET medico_id = ? WHERE medico_id = ?");
+                                $upCitas->bindParam(1, $idPrincipal, PDO::PARAM_INT);
+                                $upCitas->bindParam(2, $idDuplicado, PDO::PARAM_INT);
+                                $upCitas->execute();
+                            } catch (Exception $e) {
+                                // Ignorar si la tabla no existe en esta instalacion
+                            }
+
+                            try {
+                                $upConsultas = $pdo->prepare("UPDATE expediente_consultas SET medico_id = ? WHERE medico_id = ?");
+                                $upConsultas->bindParam(1, $idPrincipal, PDO::PARAM_INT);
+                                $upConsultas->bindParam(2, $idDuplicado, PDO::PARAM_INT);
+                                $upConsultas->execute();
+                            } catch (Exception $e) {
+                                // Ignorar si la tabla no existe en esta instalacion
+                            }
+
+                            $del = $pdo->prepare("DELETE FROM medicos WHERE id = ?");
+                            $del->bindParam(1, $idDuplicado, PDO::PARAM_INT);
+                            if ($del->execute()) {
+                                $totalEliminados++;
+                            }
+                        }
+                    }
+
+                    if ($totalEliminados > 0) {
+                        $mensaje = "✅ Limpieza completada: se eliminaron {$totalEliminados} médicos duplicados";
+                    } else {
+                        $mensaje = "ℹ️ No hubo registros para eliminar";
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('Error limpiando médicos duplicados: ' . $e->getMessage());
+                $error = "❌ Ocurrió un error al limpiar duplicados";
             }
         }
     }
@@ -344,9 +429,14 @@ $medicos = $pdo->query("SELECT * FROM medicos ORDER BY nombre ASC");
         <div class="admin-content" style="flex: 1;">
             <div class="admin-header">
                 <h1><i class="fas fa-user-md"></i> Gestión de Médicos</h1>
-                <button class="btn-add" onclick="openModal('add')">
-                    <i class="fas fa-plus"></i> Nuevo Médico
-                </button>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+                    <button class="btn btn-outline-secondary" type="button" onclick="cleanupDuplicates()" style="padding: 11px 16px; border-radius: 14px; font-weight: 700;">
+                        <i class="fas fa-broom"></i> Limpiar duplicados
+                    </button>
+                    <button class="btn-add" onclick="openModal('add')">
+                        <i class="fas fa-plus"></i> Nuevo Médico
+                    </button>
+                </div>
             </div>
             
             <?php if($mensaje): ?>
@@ -489,6 +579,23 @@ $medicos = $pdo->query("SELECT * FROM medicos ORDER BY nombre ASC");
                 input2.name = 'id';
                 input2.value = id;
                 form.appendChild(input2);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function cleanupDuplicates() {
+            if (confirm('Esto unificará médicos duplicados por correo y eliminará repetidos. ¿Deseas continuar?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'action';
+                input.value = 'cleanup_duplicates';
+                form.appendChild(input);
+
                 document.body.appendChild(form);
                 form.submit();
             }
