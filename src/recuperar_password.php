@@ -26,8 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ? validarContraseña($nueva_password)
             : ['valida' => true, 'errores' => []];
 
-        if (!$validacion['valida']) {
-            $error = 'Contrasena debil: ' . implode(' ', $validacion['errores']);
+        $esValida = (bool)($validacion['valido'] ?? $validacion['valida'] ?? false);
+        $erroresValidacion = is_array($validacion['errores'] ?? null) ? $validacion['errores'] : [];
+
+        if (!$esValida) {
+            $error = 'Contrasena debil: ' . implode(' ', $erroresValidacion);
         } else {
             try {
                 $hash = password_hash($nueva_password, PASSWORD_DEFAULT);
